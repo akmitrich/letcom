@@ -1,20 +1,22 @@
-use cursive::{views::TextView, Cursive, CursiveExt};
+use crate::ui;
+use cursive::CursiveExt;
 
 pub struct App {
-    siv: Cursive,
+    ui: ui::Ui,
 }
 
 impl App {
     pub fn new() -> Self {
-        Self {
-            siv: Cursive::new(),
-        }
+        Self { ui: ui::Ui::new() }
     }
 
     pub fn go(mut self) {
-        self.siv
-            .add_layer(TextView::new("Hello World!\nPress q to quit."));
-        self.siv.add_global_callback('q', Cursive::quit);
-        self.siv.run();
+        self.ui.siv.run();
+    }
+}
+
+impl Default for App {
+    fn default() -> Self {
+        Self::new()
     }
 }
