@@ -1,17 +1,18 @@
-use crate::ui;
-use cursive::CursiveExt;
+use crate::controller::Controller;
 
 pub struct App {
-    ui: ui::Ui,
+    controller: Controller,
 }
 
 impl App {
     pub fn new() -> Self {
-        Self { ui: ui::Ui::new() }
+        Self {
+            controller: Controller::new(),
+        }
     }
 
     pub fn go(mut self) {
-        self.ui.siv.run();
+        self.controller.run();
     }
 }
 
