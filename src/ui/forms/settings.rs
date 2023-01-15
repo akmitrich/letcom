@@ -1,4 +1,4 @@
-use std::{mem::take, sync::mpsc};
+use std::sync::mpsc;
 
 use cursive::{
     event::{Event, EventResult, Key, MouseButton, MouseEvent},
@@ -9,7 +9,7 @@ use cursive::{
 
 use crate::{
     controller::{settings::Settings, ControllerSignal},
-    ui::utils::text_entry_full_width,
+    ui::utils::{dismiss, text_entry_full_width},
 };
 
 pub struct SettingsForm {
@@ -32,24 +32,25 @@ impl SettingsForm {
     fn event_submit(&mut self) -> EventResult {
         self.update_settings();
         self.controller_tx
-            .send(ControllerSignal::UpdateSettings(take(&mut self.settings)))
+            .send(ControllerSignal::UpdateSettings(self.settings.clone()))
             .unwrap();
-        self.dismiss()
+        dismiss()
     }
 
     fn event_cancel(&mut self) -> EventResult {
-        self.dismiss()
-    }
-
-    fn dismiss(&mut self) -> EventResult {
-        EventResult::with_cb(|c| {
-            c.pop_layer();
-        })
+        dismiss()
     }
 }
 
 impl SettingsForm {
     //update logic impl block
+    const SMTP_RELAY_I: usize = 0;
+    const SMTP_USER_I: usize = 1;
+    const SMTP_PASSWORD_I: usize = 2;
+    const LETTER_FROM_I: usize = 3;
+    const PLURAL_TITLE_I: usize = 4;
+    const SINGLE_GREET_I: usize = 5;
+
     fn update_settings(&mut self) {
         self.update_smtp_relay();
         self.update_smtp_user();
@@ -59,19 +60,32 @@ impl SettingsForm {
         self.update_single_greet();
     }
 
-    fn update_smtp_relay(&mut self) {}
-
-    fn update_smtp_user(&mut self) {
-        self.settings.smtp_user = self.get_area(1).get_content().into();
+    fn update_smtp_relay(&mut self) {
+        self.settings.smtp_relay = self.get_data(Self::SMTP_RELAY_I);
     }
 
-    fn update_smtp_password(&mut self) {}
-    fn update_letter_from(&mut self) {}
-    fn update_plural_title(&mut self) {}
-    fn update_single_greet(&mut self) {}
+    fn update_smtp_user(&mut self) {
+        self.settings.smtp_user = self.get_data(Self::SMTP_USER_I);
+    }
+
+    fn update_smtp_password(&mut self) {
+        self.settings.smtp_password = self.get_data(Self::SMTP_PASSWORD_I);
+    }
+    fn update_letter_from(&mut self) {
+        self.settings.letter_from = self.get_data(Self::LETTER_FROM_I);
+    }
+    fn update_plural_title(&mut self) {
+        self.settings.plural_title = self.get_data(Self::PLURAL_TITLE_I);
+    }
+    fn update_single_greet(&mut self) {
+        self.settings.single_greet = self.get_data(Self::SINGLE_GREET_I);
+    }
+
+    fn get_data(&self, index: usize) -> String {
+        self.get_area(index).get_content().into()
+    }
 
     fn get_area(&self, index: usize) -> &TextArea {
-        eprintln!("Settings: {:?}", self.view.get_content().type_name());
         let scroll = self
             .view
             .get_content()

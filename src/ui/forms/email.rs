@@ -7,7 +7,10 @@ use cursive::{
     wrap_impl, View,
 };
 
-use crate::{controller::ControllerSignal, ui::utils::text_entry_full_width};
+use crate::{
+    controller::ControllerSignal,
+    ui::utils::{dismiss, text_entry_full_width},
+};
 
 pub struct EmailForm {
     view: Dialog,
@@ -57,24 +60,18 @@ impl EmailForm {
     }
 
     fn event_submit(&mut self) -> EventResult {
-        self.dismiss()
+        dismiss()
     }
 
     fn event_cancel(&mut self) -> EventResult {
-        self.dismiss()
+        dismiss()
     }
 
     fn event_send(&mut self) -> EventResult {
         self.controller_tx
             .send(ControllerSignal::SendEmail)
             .unwrap();
-        self.dismiss()
-    }
-
-    fn dismiss(&self) -> EventResult {
-        EventResult::with_cb(|c| {
-            c.pop_layer();
-        })
+        dismiss()
     }
 }
 

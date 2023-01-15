@@ -8,6 +8,7 @@ pub struct Settings {
     pub letter_from: String,
     pub plural_title: String,
     pub single_greet: String,
+    pub letter_signature: String,
 }
 
 impl Settings {
@@ -17,6 +18,7 @@ impl Settings {
     const LETTER_FROM: &str = "LETTER_FROM";
     const PLURAL_TITLE: &str = "PLURAL_TITLE";
     const SINGLE_GREET: &str = "SINGLE_GREET";
+    const LETTER_SIGNATURE: &str = "LETTER_SIGNATURE";
 
     pub fn load() -> Self {
         dotenv::dotenv().ok();
@@ -30,6 +32,7 @@ impl Settings {
                 .unwrap_or_else(|_| "Уважаемые коллеги!".into()),
             single_greet: env::var(Self::SINGLE_GREET)
                 .unwrap_or_else(|_| "С уважением,\nАлександр Калашников.".into()),
+            letter_signature: env::var(Self::LETTER_SIGNATURE).unwrap_or_else(|_| "".into()),
         }
     }
 
@@ -58,6 +61,7 @@ impl Default for Settings {
             letter_from: "john@dow.com".parse().unwrap(),
             plural_title: Default::default(),
             single_greet: Default::default(),
+            letter_signature: Default::default(),
         }
     }
 }

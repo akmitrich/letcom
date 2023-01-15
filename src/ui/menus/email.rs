@@ -2,10 +2,7 @@ use std::sync::mpsc;
 
 use cursive::menu::Tree;
 
-use crate::{
-    controller::{self, ControllerSignal},
-    ui,
-};
+use crate::{controller::ControllerSignal, ui};
 
 pub fn email_menu(controller_tx: &mpsc::Sender<ControllerSignal>) -> Tree {
     let form_tx = controller_tx.clone();
@@ -14,9 +11,7 @@ pub fn email_menu(controller_tx: &mpsc::Sender<ControllerSignal>) -> Tree {
         c.add_layer(form);
     });
     let settings_tx = controller_tx.clone();
-    tree.leaf("Settings...", move |c| {
-        let settings = controller::settings::Settings::load();
-        let form = ui::forms::settings::SettingsForm::new(settings, &settings_tx);
-        c.add_layer(form);
+    tree.leaf("Settings...", move |_| {
+        settings_tx.send(ControllerSignal::EditSettings).unwrap();
     })
 }

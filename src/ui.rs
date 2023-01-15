@@ -51,20 +51,6 @@ impl Ui {
     }
 }
 
-fn init_menu(siv: &mut Cursive, controller_tx: &mpsc::Sender<ControllerSignal>) {
-    let menu = siv.menubar();
-    let tx = controller_tx.clone();
-    menu.add_subtree("Email", menus::email::email_menu(controller_tx));
-    menu.add_leaf("Quit", move |_| tx.send(ControllerSignal::Quit).unwrap());
-    siv.add_global_callback(Key::Esc, |c| c.select_menubar());
-    siv.set_autohide_menu(false);
-}
-
-fn init_view(siv: &mut Cursive) {
-    siv.add_layer(TextView::new("Hello World!\nPress Ctrl-q to quit."));
-    siv.add_global_callback(Event::CtrlChar('q'), Cursive::quit);
-}
-
 impl Ui {
     fn process_messages(&mut self) {
         use UiEvent::*;
@@ -78,6 +64,20 @@ impl Ui {
             }
         }
     }
+}
+
+fn init_menu(siv: &mut Cursive, controller_tx: &mpsc::Sender<ControllerSignal>) {
+    let menu = siv.menubar();
+    let tx = controller_tx.clone();
+    menu.add_subtree("Email", menus::email::email_menu(controller_tx));
+    menu.add_leaf("Quit", move |_| tx.send(ControllerSignal::Quit).unwrap());
+    siv.add_global_callback(Key::Esc, |c| c.select_menubar());
+    siv.set_autohide_menu(false);
+}
+
+fn init_view(siv: &mut Cursive) {
+    siv.add_layer(TextView::new("Hello World!\nPress Ctrl-q to quit."));
+    siv.add_global_callback(Event::CtrlChar('q'), Cursive::quit);
 }
 
 #[derive(Debug)]
