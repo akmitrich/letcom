@@ -1,4 +1,4 @@
-use std::env;
+use std::{env, fs};
 
 #[derive(Debug, Clone)]
 pub struct Settings {
@@ -31,6 +31,21 @@ impl Settings {
             single_greet: env::var(Self::SINGLE_GREET)
                 .unwrap_or_else(|_| "С уважением,\nАлександр Калашников.".into()),
         }
+    }
+
+    pub fn save(&self) {
+        let mut settings = vec![];
+        settings.push(format!("{}=\"{}\"", Self::SMTP_RELAY, self.smtp_relay));
+        settings.push(format!("{}=\"{}\"", Self::SMTP_USER, self.smtp_user));
+        settings.push(format!(
+            "{}=\"{}\"",
+            Self::SMTP_PASSWORD,
+            self.smtp_password
+        ));
+        settings.push(format!("{}=\"{}\"", Self::LETTER_FROM, self.letter_from));
+        settings.push(format!("{}=\"{}\"", Self::PLURAL_TITLE, self.plural_title));
+        settings.push(format!("{}=\"{}\"", Self::SINGLE_GREET, self.single_greet));
+        fs::write(".env", settings.join("\n")).unwrap();
     }
 }
 

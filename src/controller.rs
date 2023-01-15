@@ -47,6 +47,7 @@ impl Controller {
                 }
                 UpdateSettings(s) => {
                     self.settings = s;
+                    self.settings.save();
                 }
                 SendEmail => {
                     eprintln!("Email processing...");

@@ -2,8 +2,8 @@ use std::{mem::take, sync::mpsc};
 
 use cursive::{
     event::{Event, EventResult, Key, MouseButton, MouseEvent},
-    view::ViewWrapper,
-    views::{Dialog, DialogFocus, LinearLayout},
+    view::{Scrollable, ViewWrapper},
+    views::{Dialog, DialogFocus, LinearLayout, ResizedView, ScrollView, TextArea},
     wrap_impl, View,
 };
 
@@ -29,8 +29,6 @@ impl SettingsForm {
 }
 
 impl SettingsForm {
-    fn update_settings(&mut self) {}
-
     fn event_submit(&mut self) -> EventResult {
         self.update_settings();
         self.controller_tx
@@ -47,6 +45,51 @@ impl SettingsForm {
         EventResult::with_cb(|c| {
             c.pop_layer();
         })
+    }
+}
+
+impl SettingsForm {
+    //update logic impl block
+    fn update_settings(&mut self) {
+        self.update_smtp_relay();
+        self.update_smtp_user();
+        self.update_smtp_password();
+        self.update_letter_from();
+        self.update_plural_title();
+        self.update_single_greet();
+    }
+
+    fn update_smtp_relay(&mut self) {}
+
+    fn update_smtp_user(&mut self) {
+        self.settings.smtp_user = self.get_area(1).get_content().into();
+    }
+
+    fn update_smtp_password(&mut self) {}
+    fn update_letter_from(&mut self) {}
+    fn update_plural_title(&mut self) {}
+    fn update_single_greet(&mut self) {}
+
+    fn get_area(&self, index: usize) -> &TextArea {
+        eprintln!("Settings: {:?}", self.view.get_content().type_name());
+        let scroll = self
+            .view
+            .get_content()
+            .downcast_ref::<ScrollView<LinearLayout>>()
+            .unwrap();
+        let entry = scroll
+            .get_inner()
+            .get_child(index)
+            .unwrap()
+            .downcast_ref::<LinearLayout>()
+            .unwrap();
+        let widget = entry
+            .get_child(2)
+            .unwrap()
+            .downcast_ref::<ResizedView<TextArea>>()
+            .unwrap()
+            .get_inner();
+        widget
     }
 }
 
@@ -79,6 +122,7 @@ impl ViewWrapper for SettingsForm {
                     .with_view_mut(|v| v.on_event(event))
                     .unwrap_or(EventResult::Ignored),
             },
+            Event::Key(Key::Esc) => self.event_cancel(),
             _ => self
                 .with_view_mut(|v| v.on_event(event))
                 .unwrap_or(EventResult::Ignored),
@@ -109,4 +153,5 @@ fn init_form(settings: &Settings) -> impl View {
             "Приветствие:",
             &settings.single_greet,
         ))
+        .scrollable()
 }
