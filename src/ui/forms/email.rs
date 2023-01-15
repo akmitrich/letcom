@@ -14,17 +14,17 @@ use crate::{
 
 pub struct EmailForm {
     view: Dialog,
+    _name: String,
     controller_tx: mpsc::Sender<ControllerSignal>,
 }
 
 impl EmailForm {
-    pub fn new(controller_tx: &mpsc::Sender<ControllerSignal>) -> Self {
-        let mut form = Self {
+    pub fn new(name: &str, controller_tx: &mpsc::Sender<ControllerSignal>) -> Self {
+        Self {
             view: init_dialog(),
+            _name: name.into(),
             controller_tx: controller_tx.clone(),
-        };
-        form.populate_form();
-        form
+        }
     }
 }
 
@@ -32,11 +32,6 @@ impl EmailForm {
     const INTRO: &str = "email_form_intro";
     const TEXT: &str = "email_form_text";
     const OUTRO: &str = "email_form_outro";
-
-    fn populate_form(&mut self) {
-        self.get_area(2)
-            .set_content("С уважением,\nАлександр Калашников.");
-    }
 
     fn get_area(&mut self, index: usize) -> &mut TextArea {
         let scroll = self
@@ -69,7 +64,7 @@ impl EmailForm {
 
     fn event_send(&mut self) -> EventResult {
         self.controller_tx
-            .send(ControllerSignal::SendEmail)
+            .send(ControllerSignal::SendLetter)
             .unwrap();
         dismiss()
     }

@@ -48,6 +48,11 @@ impl Settings {
         settings.push(format!("{}=\"{}\"", Self::LETTER_FROM, self.letter_from));
         settings.push(format!("{}=\"{}\"", Self::PLURAL_TITLE, self.plural_title));
         settings.push(format!("{}=\"{}\"", Self::SINGLE_GREET, self.single_greet));
+        settings.push(format!(
+            "{}=\"{}\"",
+            Self::LETTER_SIGNATURE,
+            self.letter_signature
+        ));
         fs::write(".env", settings.join("\n")).unwrap();
     }
 }
