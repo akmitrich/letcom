@@ -1,6 +1,10 @@
 use std::sync::mpsc;
 
-use cursive::{event::Key, views::TextView, Cursive, CursiveRunner};
+use cursive::{
+    event::{Event, Key},
+    views::TextView,
+    Cursive, CursiveRunner,
+};
 
 use crate::controller::ControllerSignal;
 
@@ -49,8 +53,8 @@ fn init_menu(siv: &mut Cursive, controller_tx: &mpsc::Sender<ControllerSignal>) 
 }
 
 fn init_view(siv: &mut Cursive) {
-    siv.add_layer(TextView::new("Hello World!\nPress q to quit."));
-    siv.add_global_callback('q', Cursive::quit);
+    siv.add_layer(TextView::new("Hello World!\nPress Ctrl-q to quit."));
+    siv.add_global_callback(Event::CtrlChar('q'), Cursive::quit);
 }
 
 impl Ui {
@@ -59,3 +63,4 @@ impl Ui {
 
 mod forms;
 mod menus;
+mod utils;
