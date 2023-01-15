@@ -6,15 +6,21 @@ use cursive::{
     Cursive, CursiveRunner,
 };
 
-use crate::controller::ControllerSignal;
+use crate::controller::{self, ControllerSignal};
 
 pub struct Ui {
     runner: CursiveRunner<Cursive>,
     controller_tx: mpsc::Sender<ControllerSignal>,
+    rx: mpsc::Receiver<UiEvent>,
+    tx: mpsc::Sender<UiEvent>,
 }
 
 impl Ui {
-    pub fn new(controller_tx: &mpsc::Sender<ControllerSignal>) -> Self {
+    pub fn new(
+        rx: mpsc::Receiver<UiEvent>,
+        tx: &mpsc::Sender<UiEvent>,
+        controller_tx: &mpsc::Sender<ControllerSignal>,
+    ) -> Self {
         let ncurses = cursive::backends::curses::n::Backend::init().unwrap();
         let mut runner = CursiveRunner::new(Cursive::default(), ncurses);
         let controller_tx = controller_tx.clone();
@@ -23,6 +29,8 @@ impl Ui {
         runner.refresh();
         Self {
             runner,
+            rx,
+            tx: tx.clone(),
             controller_tx,
         }
     }
@@ -58,7 +66,25 @@ fn init_view(siv: &mut Cursive) {
 }
 
 impl Ui {
-    fn process_messages(&mut self) {}
+    fn process_messages(&mut self) {
+        use UiEvent::*;
+        if let Ok(event) = self.rx.try_recv() {
+            match event {
+                Noop => todo!(),
+                SettingsForm(settings) => self.runner.add_layer(
+                    forms::settings::SettingsForm::new(settings, &self.controller_tx),
+                ),
+                any => eprintln!("Unexpected UI event {:?}", any),
+            }
+        }
+    }
+}
+
+#[derive(Debug)]
+pub enum UiEvent {
+    Noop,
+    StepNext,
+    SettingsForm(controller::settings::Settings),
 }
 
 mod forms;

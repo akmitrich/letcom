@@ -65,7 +65,10 @@ impl EmailForm {
     }
 
     fn event_send(&mut self) -> EventResult {
-        EventResult::Ignored
+        self.controller_tx
+            .send(ControllerSignal::SendEmail)
+            .unwrap();
+        self.dismiss()
     }
 
     fn dismiss(&self) -> EventResult {
