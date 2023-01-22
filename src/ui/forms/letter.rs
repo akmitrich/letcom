@@ -1,4 +1,4 @@
-use std::sync::mpsc;
+use std::{fs, sync::mpsc};
 
 use cursive::{
     event::{Event, EventResult, Key, MouseButton, MouseEvent},
@@ -6,6 +6,7 @@ use cursive::{
     views::{Dialog, DialogFocus, LinearLayout, ResizedView, ScrollView, TextArea, TextView},
     wrap_impl, View,
 };
+use lettre::message::{header::ContentType, Attachment};
 
 use crate::{
     controller::ControllerSignal,
@@ -31,7 +32,13 @@ impl LetterForm {
     }
 
     pub fn set_filename(&mut self, filename: &str) {
-        eprintln!("Receive '{}'", filename);
+        let filebody = fs::read(filename).unwrap();
+        let content_type = ContentType::parse("application/txt").unwrap();
+        let attachment = Attachment::new(filename.to_owned()).body(filebody, content_type);
+        eprintln!(
+            "Loaded: '{}'",
+            String::from_utf8_lossy(&attachment.formatted())
+        );
     }
 }
 

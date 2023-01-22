@@ -30,9 +30,9 @@ impl Settings {
                 .unwrap_or_else(|_| "kalashnikov.ad@mipt.ru".into()),
             plural_title: env::var(Self::PLURAL_TITLE)
                 .unwrap_or_else(|_| "Уважаемые коллеги!".into()),
-            single_greet: env::var(Self::SINGLE_GREET)
+            single_greet: env::var(Self::SINGLE_GREET).unwrap_or_else(|_| "".into()),
+            letter_signature: env::var(Self::LETTER_SIGNATURE)
                 .unwrap_or_else(|_| "С уважением,\nАлександр Калашников.".into()),
-            letter_signature: env::var(Self::LETTER_SIGNATURE).unwrap_or_else(|_| "".into()),
         }
     }
 

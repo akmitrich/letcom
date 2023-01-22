@@ -50,6 +50,7 @@ impl SettingsForm {
     const LETTER_FROM_I: usize = 3;
     const PLURAL_TITLE_I: usize = 4;
     const SINGLE_GREET_I: usize = 5;
+    const SIGNATURE_I: usize = 6;
 
     fn update_settings(&mut self) {
         self.update_smtp_relay();
@@ -58,6 +59,7 @@ impl SettingsForm {
         self.update_letter_from();
         self.update_plural_title();
         self.update_single_greet();
+        self.update_signature();
     }
 
     fn update_smtp_relay(&mut self) {
@@ -79,6 +81,10 @@ impl SettingsForm {
     }
     fn update_single_greet(&mut self) {
         self.settings.single_greet = self.get_data(Self::SINGLE_GREET_I);
+    }
+
+    fn update_signature(&mut self) {
+        self.settings.letter_signature = self.get_data(Self::SIGNATURE_I);
     }
 
     fn get_data(&self, index: usize) -> String {
@@ -166,6 +172,10 @@ fn init_form(settings: &Settings) -> impl View {
         .child(text_entry_full_width(
             "Приветствие:",
             &settings.single_greet,
+        ))
+        .child(text_entry_full_width(
+            "Подпись:",
+            &settings.letter_signature,
         ))
         .scrollable()
 }
