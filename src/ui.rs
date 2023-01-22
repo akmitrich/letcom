@@ -58,7 +58,7 @@ impl Ui {
         if let Ok(event) = self.rx.try_recv() {
             #[allow(unreachable_patterns)]
             match event {
-                Noop => {}
+                Noop => self.runner.refresh(),
                 SettingsForm(settings) => self.runner.add_layer(
                     forms::settings::SettingsForm::new(settings, &self.controller_tx),
                 ),
@@ -69,18 +69,18 @@ impl Ui {
     }
 
     fn letter_form(&mut self) {
-        const LETTER_FORM: &str = "letter_form";
+        let letter_form_id = uuid::Uuid::new_v4();
         if self
             .runner
-            .find_name::<forms::email::EmailForm>(LETTER_FORM)
+            .find_name::<forms::letter::LetterForm>(&letter_form_id.to_string())
             .is_some()
         {
             self.runner
                 .add_layer(Dialog::info("Такое окно уже открыто!"));
         } else {
             self.runner.add_layer(
-                forms::email::EmailForm::new(LETTER_FORM, &self.controller_tx)
-                    .with_name(LETTER_FORM),
+                forms::letter::LetterForm::new(letter_form_id, &self.controller_tx)
+                    .with_name(letter_form_id.to_string()),
             );
         }
     }
@@ -107,6 +107,7 @@ pub enum UiEvent {
     LetterForm(String),
 }
 
+mod dialogs;
 mod forms;
 mod menus;
 mod utils;

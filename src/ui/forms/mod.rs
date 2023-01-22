@@ -1,2 +1,2 @@
-pub mod email;
+pub mod letter;
 pub mod settings;
