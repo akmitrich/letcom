@@ -41,7 +41,6 @@ impl Controller {
                 Noop => {}
                 OpenSettings => self.open_settings(),
                 UpdateSettings(s) => self.update_settings(s),
-                NewLetter => self.new_letter(),
                 SendLetter => {
                     eprintln!("Email processing...");
                 }
@@ -62,12 +61,6 @@ impl Controller {
         self.settings = s;
         self.settings.save();
     }
-
-    fn new_letter(&mut self) {
-        self.ui_tx
-            .send(UiEvent::LetterForm("Some text".into()))
-            .unwrap();
-    }
 }
 
 #[derive(Debug)]
@@ -75,7 +68,6 @@ pub enum ControllerSignal {
     Noop,
     OpenSettings,
     UpdateSettings(Settings),
-    NewLetter,
     SendLetter,
     Quit,
 }

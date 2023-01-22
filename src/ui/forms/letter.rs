@@ -32,49 +32,66 @@ impl LetterForm {
         controller_tx: &mpsc::Sender<ControllerSignal>,
         ui_tx: &mpsc::Sender<UiEvent>,
     ) -> Self {
-        Self {
+        let mut form = Self {
             view: init_dialog(&letter),
             name,
             letter,
             controller_tx: controller_tx.clone(),
             ui_tx: ui_tx.clone(),
-        }
+        };
+        form.update_attachments();
+        form
     }
 
     pub fn set_filename(&mut self, filename: &str) {
-        if let Ok(filebody) = fs::read(filename) {
-            let content_type = ContentType::parse("application/txt").unwrap();
-            let attachment = Attachment::new(filename.to_owned()).body(filebody, content_type);
-            self.letter
-                .attachment
-                .insert(filename.to_owned(), attachment);
-            self.ui_tx
-                .send(UiEvent::LoadedFile(filename.to_owned()))
-                .unwrap();
+        let filename = filename.trim();
+        match fs::read(filename) {
+            Ok(filebody) => {
+                let content_type = ContentType::parse("application/txt").unwrap();
+                let attachment = Attachment::new(filename.to_owned()).body(filebody, content_type);
+                let size = attachment.raw_body().len();
+                self.letter
+                    .attachment
+                    .insert(filename.to_owned(), attachment);
+                self.ui_tx
+                    .send(UiEvent::PresentInfo(format!(
+                        "Загружен файл: '{}'\n({} байт)",
+                        filename.to_owned(),
+                        size
+                    )))
+                    .unwrap();
+            }
+            Err(ref read_error) => self
+                .ui_tx
+                .send(UiEvent::PresentInfo(format!(
+                    "Случилось непредвиденное:\n{}",
+                    read_error
+                )))
+                .unwrap(),
         }
         self.update_attachments();
     }
 }
 
 impl LetterForm {
-    fn get_area(&mut self, index: usize) -> &mut TextArea {
+    fn get_area(&mut self, index: usize) -> &TextArea {
         let scroll = self
             .view
-            .get_content_mut()
-            .downcast_mut::<ScrollView<LinearLayout>>()
+            .get_content()
+            .downcast_ref::<ScrollView<LinearLayout>>()
             .unwrap();
         let entry = scroll
-            .get_inner_mut()
-            .get_child_mut(index)
+            .get_inner()
+            .get_child(index)
             .unwrap()
-            .downcast_mut::<LinearLayout>()
+            .downcast_ref::<LinearLayout>()
             .unwrap();
         let widget = entry
-            .get_child_mut(2)
+            .get_child(2)
             .unwrap()
-            .downcast_mut::<ResizedView<TextArea>>()
+            .downcast_ref::<ResizedView<TextArea>>()
             .unwrap()
-            .get_inner_mut();
+            .get_inner();
         widget
     }
 
@@ -93,7 +110,11 @@ impl LetterForm {
         for (a, b) in self.letter.attachment.iter() {
             info.push(format!("['{}' ({} байт)]", a, b.raw_body().len()));
         }
-        text.set_content(format!("Вложения: {}.", info.join(", ")));
+        if info.is_empty() {
+            text.set_content("Вложения");
+        } else {
+            text.set_content(format!("Вложения: {}.", info.join(", ")));
+        }
     }
 
     fn event_submit(&mut self) -> EventResult {

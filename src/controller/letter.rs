@@ -2,6 +2,7 @@ use std::collections::BTreeMap;
 
 use lettre::message::SinglePart;
 
+#[derive(Debug)]
 pub struct Letter {
     pub topic: String,
     pub text: String,
