@@ -80,4 +80,5 @@ pub enum ControllerSignal {
     Quit,
 }
 
+pub mod letter;
 pub mod settings;

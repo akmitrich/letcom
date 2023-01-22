@@ -9,44 +9,54 @@ use cursive::{
 use lettre::message::{header::ContentType, Attachment};
 
 use crate::{
-    controller::ControllerSignal,
+    controller::{letter::Letter, ControllerSignal},
     ui::{
         dialogs::{open_file::OpenFileDialog, SetData},
         utils::{dismiss, text_entry_full_width},
+        UiEvent,
     },
 };
 
 pub struct LetterForm {
     view: Dialog,
     name: uuid::Uuid,
+    letter: Letter,
     controller_tx: mpsc::Sender<ControllerSignal>,
+    ui_tx: mpsc::Sender<UiEvent>,
 }
 
 impl LetterForm {
-    pub fn new(name: uuid::Uuid, controller_tx: &mpsc::Sender<ControllerSignal>) -> Self {
+    pub fn new(
+        name: uuid::Uuid,
+        letter: Letter,
+        controller_tx: &mpsc::Sender<ControllerSignal>,
+        ui_tx: &mpsc::Sender<UiEvent>,
+    ) -> Self {
         Self {
-            view: init_dialog(),
+            view: init_dialog(&letter),
             name,
+            letter,
             controller_tx: controller_tx.clone(),
+            ui_tx: ui_tx.clone(),
         }
     }
 
     pub fn set_filename(&mut self, filename: &str) {
-        let filebody = fs::read(filename).unwrap();
-        let content_type = ContentType::parse("application/txt").unwrap();
-        let attachment = Attachment::new(filename.to_owned()).body(filebody, content_type);
-        eprintln!(
-            "Loaded: '{}'",
-            String::from_utf8_lossy(&attachment.formatted())
-        );
+        if let Ok(filebody) = fs::read(filename) {
+            let content_type = ContentType::parse("application/txt").unwrap();
+            let attachment = Attachment::new(filename.to_owned()).body(filebody, content_type);
+            self.letter
+                .attachment
+                .insert(filename.to_owned(), attachment);
+            self.ui_tx
+                .send(UiEvent::LoadedFile(filename.to_owned()))
+                .unwrap();
+        }
+        self.update_attachments();
     }
 }
 
 impl LetterForm {
-    const INTRO: &str = "email_form_intro";
-    const TEXT: &str = "email_form_text";
-    const OUTRO: &str = "email_form_outro";
-
     fn get_area(&mut self, index: usize) -> &mut TextArea {
         let scroll = self
             .view
@@ -66,6 +76,24 @@ impl LetterForm {
             .unwrap()
             .get_inner_mut();
         widget
+    }
+
+    fn update_attachments(&mut self) {
+        let text = self
+            .view
+            .get_content_mut()
+            .downcast_mut::<ScrollView<LinearLayout>>()
+            .unwrap()
+            .get_inner_mut()
+            .get_child_mut(2)
+            .unwrap()
+            .downcast_mut::<TextView>()
+            .unwrap();
+        let mut info = vec![];
+        for (a, b) in self.letter.attachment.iter() {
+            info.push(format!("['{}' ({} байт)]", a, b.raw_body().len()));
+        }
+        text.set_content(format!("Вложения: {}.", info.join(", ")));
     }
 
     fn event_submit(&mut self) -> EventResult {
@@ -144,8 +172,8 @@ impl ViewWrapper for LetterForm {
     }
 }
 
-fn init_dialog() -> Dialog {
-    Dialog::around(init_form().scrollable())
+fn init_dialog(letter: &Letter) -> Dialog {
+    Dialog::around(init_form(letter).scrollable())
         .title("Редактируем письмо")
         .button("OK", |_| {})
         .button("Cancel", |_| {})
@@ -154,10 +182,9 @@ fn init_dialog() -> Dialog {
         .button("Send", |_| {})
 }
 
-fn init_form() -> impl View {
+fn init_form(letter: &Letter) -> impl View {
     LinearLayout::vertical()
-        .child(text_entry_full_width("     Тема:", LetterForm::INTRO))
-        .child(text_entry_full_width("Сообщение:", LetterForm::TEXT))
-        .child(text_entry_full_width("  Подпись:", LetterForm::OUTRO))
+        .child(text_entry_full_width("     Тема:", &letter.topic))
+        .child(text_entry_full_width("Сообщение:", &letter.text))
         .child(TextView::new("Вложения"))
 }

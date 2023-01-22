@@ -7,7 +7,7 @@ use cursive::{
     Cursive, CursiveRunner,
 };
 
-use crate::controller::{self, ControllerSignal};
+use crate::controller::{self, letter::Letter, ControllerSignal};
 
 pub struct Ui {
     runner: CursiveRunner<Cursive>,
@@ -63,6 +63,9 @@ impl Ui {
                     forms::settings::SettingsForm::new(settings, &self.controller_tx),
                 ),
                 LetterForm(_) => self.letter_form(),
+                LoadedFile(filename) => self
+                    .runner
+                    .add_layer(Dialog::info(format!("Загружен файл: {}", filename))),
                 any => eprintln!("Unexpected UI event {:?}", any),
             }
         }
@@ -70,19 +73,15 @@ impl Ui {
 
     fn letter_form(&mut self) {
         let letter_form_id = uuid::Uuid::new_v4();
-        if self
-            .runner
-            .find_name::<forms::letter::LetterForm>(&letter_form_id.to_string())
-            .is_some()
-        {
-            self.runner
-                .add_layer(Dialog::info("Такое окно уже открыто!"));
-        } else {
-            self.runner.add_layer(
-                forms::letter::LetterForm::new(letter_form_id, &self.controller_tx)
-                    .with_name(letter_form_id.to_string()),
-            );
-        }
+        self.runner.add_layer(
+            forms::letter::LetterForm::new(
+                letter_form_id,
+                Letter::new(),
+                &self.controller_tx,
+                &self._tx,
+            )
+            .with_name(letter_form_id.to_string()),
+        );
     }
 }
 
@@ -105,6 +104,7 @@ pub enum UiEvent {
     Noop,
     SettingsForm(controller::settings::Settings),
     LetterForm(String),
+    LoadedFile(String),
 }
 
 mod dialogs;
