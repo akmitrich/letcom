@@ -2,7 +2,7 @@ use std::sync::mpsc;
 
 use crate::ui::{Ui, UiEvent};
 
-use self::settings::Settings;
+use self::{letter::Letter, settings::Settings};
 
 pub struct Controller {
     ui_tx: mpsc::Sender<UiEvent>,
@@ -41,9 +41,7 @@ impl Controller {
                 Noop => {}
                 OpenSettings => self.open_settings(),
                 UpdateSettings(s) => self.update_settings(s),
-                SendLetter => {
-                    eprintln!("Email processing...");
-                }
+                AppendLetter(l) => self.append_letter(l),
                 Quit => return false,
                 any => eprintln!("Unexpected controller signal: {:?}", any),
             }
@@ -61,6 +59,8 @@ impl Controller {
         self.settings = s;
         self.settings.save();
     }
+
+    fn append_letter(&mut self, letter: Letter) {}
 }
 
 #[derive(Debug)]
@@ -68,7 +68,7 @@ pub enum ControllerSignal {
     Noop,
     OpenSettings,
     UpdateSettings(Settings),
-    SendLetter,
+    AppendLetter(Letter),
     Quit,
 }
 
