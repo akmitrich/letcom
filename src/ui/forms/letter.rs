@@ -1,4 +1,4 @@
-use std::{fs, mem::take, sync::mpsc};
+use std::{fs, sync::mpsc};
 
 use cursive::{
     event::{Event, EventResult, Key, MouseButton, MouseEvent},
@@ -123,7 +123,7 @@ impl LetterForm {
         self.letter.topic = topic;
         self.letter.text = text;
         self.controller_tx
-            .send(ControllerSignal::AppendLetter(take(&mut self.letter)))
+            .send(ControllerSignal::AppendLetter(self.letter.clone()))
             .unwrap();
         dismiss()
     }
@@ -140,8 +140,8 @@ impl LetterForm {
     }
 
     fn event_send(&mut self) -> EventResult {
-        self.controller_tx
-            .send(ControllerSignal::AppendLetter(take(&mut self.letter)))
+        self.ui_tx
+            .send(UiEvent::SendForm(self.letter.clone()))
             .unwrap();
         dismiss()
     }

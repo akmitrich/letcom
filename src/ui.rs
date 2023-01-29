@@ -13,7 +13,7 @@ pub struct Ui {
     runner: CursiveRunner<Cursive>,
     controller_tx: mpsc::Sender<ControllerSignal>,
     rx: mpsc::Receiver<UiEvent>,
-    _tx: mpsc::Sender<UiEvent>,
+    tx: mpsc::Sender<UiEvent>,
 }
 
 impl Ui {
@@ -31,7 +31,7 @@ impl Ui {
         Self {
             runner,
             rx,
-            _tx: tx.clone(),
+            tx: tx.clone(),
             controller_tx,
         }
     }
@@ -41,14 +41,9 @@ impl Ui {
             self.process_messages();
             self.runner.step();
             self.runner.refresh();
-            if self.need_to_stop() {
-                self.controller_tx.send(ControllerSignal::Quit).unwrap();
-            }
+        } else {
+            self.controller_tx.send(ControllerSignal::Quit).unwrap();
         }
-    }
-
-    pub fn need_to_stop(&self) -> bool {
-        !self.runner.is_running()
     }
 }
 
@@ -61,6 +56,7 @@ impl Ui {
                 Noop => self.runner.refresh(),
                 SettingsForm(settings) => self.settings_form(settings),
                 LetterForm(letter) => self.letter_form(letter),
+                SendForm(letter) => self.send_letter_form(letter),
                 PresentInfo(ref info) => self.present_info(info),
                 any => eprintln!("Unexpected UI event {:?}", any),
             }
@@ -77,9 +73,14 @@ impl Ui {
     fn letter_form(&mut self, letter: Letter) {
         let letter_form_id = uuid::Uuid::new_v4();
         self.runner.add_layer(
-            forms::letter::LetterForm::new(letter_form_id, letter, &self.controller_tx, &self._tx)
+            forms::letter::LetterForm::new(letter_form_id, letter, &self.controller_tx, &self.tx)
                 .with_name(letter_form_id.to_string()),
         );
+    }
+
+    fn send_letter_form(&mut self, letter: Letter) {
+        self.runner
+            .add_layer(forms::sendletter::SendLetterForm::new());
     }
 
     fn present_info(&mut self, info: &str) {
@@ -112,6 +113,7 @@ pub enum UiEvent {
     Noop,
     SettingsForm(Settings),
     LetterForm(Letter),
+    SendForm(Letter),
     PresentInfo(String),
 }
 
