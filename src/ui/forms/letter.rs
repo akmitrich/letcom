@@ -117,11 +117,15 @@ impl LetterForm {
         }
     }
 
-    fn event_submit(&mut self) -> EventResult {
+    fn update_letter(&mut self) {
         let topic = self.get_area(0).get_content().to_string();
         let text = self.get_area(1).get_content().to_string();
         self.letter.topic = topic;
         self.letter.text = text;
+    }
+
+    fn event_submit(&mut self) -> EventResult {
+        self.update_letter();
         self.controller_tx
             .send(ControllerSignal::AppendLetter(self.letter.clone()))
             .unwrap();
@@ -140,8 +144,9 @@ impl LetterForm {
     }
 
     fn event_send(&mut self) -> EventResult {
-        self.ui_tx
-            .send(UiEvent::SendForm(self.letter.clone()))
+        self.update_letter();
+        self.controller_tx
+            .send(ControllerSignal::OpenLetterToSend(self.letter.clone()))
             .unwrap();
         dismiss()
     }

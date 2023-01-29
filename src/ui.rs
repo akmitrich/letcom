@@ -56,7 +56,7 @@ impl Ui {
                 Noop => self.runner.refresh(),
                 SettingsForm(settings) => self.settings_form(settings),
                 LetterForm(letter) => self.letter_form(letter),
-                SendForm(letter) => self.send_letter_form(letter),
+                SendForm { letter, addresses } => self.send_letter_form(letter, addresses),
                 PresentInfo(ref info) => self.present_info(info),
                 any => eprintln!("Unexpected UI event {:?}", any),
             }
@@ -78,9 +78,9 @@ impl Ui {
         );
     }
 
-    fn send_letter_form(&mut self, letter: Letter) {
+    fn send_letter_form(&mut self, letter: Letter, addresses: Vec<String>) {
         self.runner
-            .add_layer(forms::sendletter::SendLetterForm::new());
+            .add_layer(forms::sendletter::SendLetterForm::new(letter, addresses));
     }
 
     fn present_info(&mut self, info: &str) {
@@ -113,7 +113,10 @@ pub enum UiEvent {
     Noop,
     SettingsForm(Settings),
     LetterForm(Letter),
-    SendForm(Letter),
+    SendForm {
+        letter: Letter,
+        addresses: Vec<String>,
+    },
     PresentInfo(String),
 }
 

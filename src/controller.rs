@@ -42,6 +42,7 @@ impl Controller {
                 OpenSettings => self.open_settings(),
                 UpdateSettings(s) => self.update_settings(s),
                 AppendLetter(l) => self.append_letter(l),
+                OpenLetterToSend(l) => self.open_letter_to_send(l),
                 Quit => return false,
                 any => eprintln!("Unexpected controller signal: {:?}", any),
             }
@@ -61,6 +62,13 @@ impl Controller {
     }
 
     fn append_letter(&mut self, letter: Letter) {}
+
+    fn open_letter_to_send(&mut self, letter: Letter) {
+        let addresses = vec!["ak.mitrich@mail.ru".to_owned()];
+        self.ui_tx
+            .send(UiEvent::SendForm { letter, addresses })
+            .unwrap();
+    }
 }
 
 #[derive(Debug)]
@@ -69,6 +77,7 @@ pub enum ControllerSignal {
     OpenSettings,
     UpdateSettings(Settings),
     AppendLetter(Letter),
+    OpenLetterToSend(Letter),
     Quit,
 }
 

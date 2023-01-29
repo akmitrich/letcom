@@ -17,4 +17,16 @@ impl Letter {
             attachment: BTreeMap::new(),
         }
     }
+
+    pub fn attachment_description(&self) -> String {
+        let mut description = vec![];
+        for (a, b) in self.attachment.iter() {
+            description.push(format!("['{}' ({} байт)]", a, b.raw_body().len()));
+        }
+        if description.is_empty() {
+            "Вложений нет.".to_owned()
+        } else {
+            format!("Вложения: {}.", description.join(", "))
+        }
+    }
 }
