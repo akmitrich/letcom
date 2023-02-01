@@ -51,6 +51,8 @@ impl LetterForm {
                 let attachment = Attachment::new(filename.to_owned()).body(filebody, content_type);
                 let size = attachment.raw_body().len();
                 self.letter
+                    .write()
+                    .unwrap()
                     .attachment
                     .insert(filename.to_owned(), attachment);
                 self.ui_tx
@@ -106,29 +108,18 @@ impl LetterForm {
             .unwrap()
             .downcast_mut::<TextView>()
             .unwrap();
-        let mut info = vec![];
-        for (a, b) in self.letter.attachment.iter() {
-            info.push(format!("['{}' ({} байт)]", a, b.raw_body().len()));
-        }
-        if info.is_empty() {
-            text.set_content("Вложения");
-        } else {
-            text.set_content(format!("Вложения: {}.", info.join(", ")));
-        }
+        text.set_content(self.letter.read().unwrap().attachment_info());
     }
 
-    fn update_letter(&mut self) {
+    fn save_letter(&mut self) {
         let topic = self.get_area(0).get_content().to_string();
         let text = self.get_area(1).get_content().to_string();
-        self.letter.topic = topic;
-        self.letter.text = text;
+        self.letter.write().unwrap().topic = topic;
+        self.letter.write().unwrap().text = text;
     }
 
     fn event_submit(&mut self) -> EventResult {
-        self.update_letter();
-        self.controller_tx
-            .send(ControllerSignal::AppendLetter(self.letter.clone()))
-            .unwrap();
+        self.save_letter();
         dismiss()
     }
 
@@ -144,7 +135,7 @@ impl LetterForm {
     }
 
     fn event_send(&mut self) -> EventResult {
-        self.update_letter();
+        self.save_letter();
         self.controller_tx
             .send(ControllerSignal::OpenLetterToSend(self.letter.clone()))
             .unwrap();
@@ -217,7 +208,13 @@ fn init_dialog(letter: &Letter) -> Dialog {
 
 fn init_form(letter: &Letter) -> impl View {
     LinearLayout::vertical()
-        .child(text_entry_full_width("     Тема:", &letter.topic))
-        .child(text_entry_full_width("Сообщение:", &letter.text))
+        .child(text_entry_full_width(
+            "     Тема:",
+            &letter.read().unwrap().topic,
+        ))
+        .child(text_entry_full_width(
+            "Сообщение:",
+            &letter.read().unwrap().text,
+        ))
         .child(TextView::new("Вложения"))
 }

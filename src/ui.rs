@@ -80,7 +80,11 @@ impl Ui {
 
     fn send_letter_form(&mut self, letter: Letter, addresses: Vec<String>) {
         self.runner
-            .add_layer(forms::sendletter::SendLetterForm::new(letter, addresses));
+            .add_layer(forms::sendletter::SendLetterForm::new(
+                letter,
+                addresses,
+                &self.controller_tx,
+            ));
     }
 
     fn present_info(&mut self, info: &str) {

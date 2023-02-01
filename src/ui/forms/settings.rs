@@ -32,7 +32,7 @@ impl SettingsForm {
     fn event_submit(&mut self) -> EventResult {
         self.update_settings();
         self.controller_tx
-            .send(ControllerSignal::UpdateSettings(self.settings.clone()))
+            .send(ControllerSignal::SaveSettings)
             .unwrap();
         dismiss()
     }
@@ -63,28 +63,28 @@ impl SettingsForm {
     }
 
     fn update_smtp_relay(&mut self) {
-        self.settings.smtp_relay = self.get_data(Self::SMTP_RELAY_I);
+        self.settings.write().unwrap().smtp_relay = self.get_data(Self::SMTP_RELAY_I);
     }
 
     fn update_smtp_user(&mut self) {
-        self.settings.smtp_user = self.get_data(Self::SMTP_USER_I);
+        self.settings.write().unwrap().smtp_user = self.get_data(Self::SMTP_USER_I);
     }
 
     fn update_smtp_password(&mut self) {
-        self.settings.smtp_password = self.get_data(Self::SMTP_PASSWORD_I);
+        self.settings.write().unwrap().smtp_password = self.get_data(Self::SMTP_PASSWORD_I);
     }
     fn update_letter_from(&mut self) {
-        self.settings.letter_from = self.get_data(Self::LETTER_FROM_I);
+        self.settings.write().unwrap().letter_from = self.get_data(Self::LETTER_FROM_I);
     }
     fn update_plural_title(&mut self) {
-        self.settings.plural_title = self.get_data(Self::PLURAL_TITLE_I);
+        self.settings.write().unwrap().plural_title = self.get_data(Self::PLURAL_TITLE_I);
     }
     fn update_single_greet(&mut self) {
-        self.settings.single_greet = self.get_data(Self::SINGLE_GREET_I);
+        self.settings.write().unwrap().single_greet = self.get_data(Self::SINGLE_GREET_I);
     }
 
     fn update_signature(&mut self) {
-        self.settings.letter_signature = self.get_data(Self::SIGNATURE_I);
+        self.settings.write().unwrap().letter_signature = self.get_data(Self::SIGNATURE_I);
     }
 
     fn get_data(&self, index: usize) -> String {
@@ -158,24 +158,33 @@ fn init_dialog(settings: &Settings) -> Dialog {
 
 fn init_form(settings: &Settings) -> impl View {
     LinearLayout::vertical()
-        .child(text_entry_full_width("SMTP-сервер:", &settings.smtp_relay))
+        .child(text_entry_full_width(
+            "SMTP-сервер:",
+            &settings.read().unwrap().smtp_relay,
+        ))
         .child(text_entry_full_width(
             "SMTP-пользователь:",
-            &settings.smtp_user,
+            &settings.read().unwrap().smtp_user,
         ))
         .child(text_entry_full_width(
             "SMTP-пароль:",
-            &settings.smtp_password,
+            &settings.read().unwrap().smtp_password,
         ))
-        .child(text_entry_full_width("Отправитель:", &settings.letter_from))
-        .child(text_entry_full_width("Обращение:", &settings.plural_title))
+        .child(text_entry_full_width(
+            "Отправитель:",
+            &settings.read().unwrap().letter_from,
+        ))
+        .child(text_entry_full_width(
+            "Обращение:",
+            &settings.read().unwrap().plural_title,
+        ))
         .child(text_entry_full_width(
             "Приветствие:",
-            &settings.single_greet,
+            &settings.read().unwrap().single_greet,
         ))
         .child(text_entry_full_width(
             "Подпись:",
-            &settings.letter_signature,
+            &settings.read().unwrap().letter_signature,
         ))
         .scrollable()
 }

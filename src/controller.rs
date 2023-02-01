@@ -2,7 +2,10 @@ use std::sync::mpsc;
 
 use crate::ui::{Ui, UiEvent};
 
-use self::{letter::Letter, settings::Settings};
+use self::{
+    letter::{create_new_letter, Letter},
+    settings::{load_settings, Settings},
+};
 
 pub struct Controller {
     ui_tx: mpsc::Sender<UiEvent>,
@@ -17,9 +20,10 @@ impl Controller {
         tx: &mpsc::Sender<ControllerSignal>,
         ui_tx: &mpsc::Sender<UiEvent>,
     ) -> Self {
+        let settings = load_settings();
         Self {
             ui_tx: ui_tx.clone(),
-            settings: Settings::load(),
+            settings,
             rx,
             _tx: tx.clone(),
         }
@@ -40,9 +44,13 @@ impl Controller {
             match signal {
                 Noop => {}
                 OpenSettings => self.open_settings(),
-                UpdateSettings(s) => self.update_settings(s),
-                AppendLetter(l) => self.append_letter(l),
+                SaveSettings => self.save_settings(),
+                NewLetter => self.new_letter(),
                 OpenLetterToSend(l) => self.open_letter_to_send(l),
+                SendEmail {
+                    letter,
+                    to: addresses,
+                } => self.send_email(letter, addresses),
                 Quit => return false,
                 any => eprintln!("Unexpected controller signal: {:?}", any),
             }
@@ -56,17 +64,31 @@ impl Controller {
             .unwrap();
     }
 
-    fn update_settings(&mut self, s: Settings) {
-        self.settings = s;
-        self.settings.save();
+    fn save_settings(&mut self) {
+        self.settings.read().unwrap().save();
     }
 
-    fn append_letter(&mut self, letter: Letter) {}
+    fn new_letter(&mut self) {
+        let letter = create_new_letter();
+        self.ui_tx.send(UiEvent::LetterForm(letter)).unwrap();
+    }
 
     fn open_letter_to_send(&mut self, letter: Letter) {
         let addresses = vec!["ak.mitrich@mail.ru".to_owned()];
         self.ui_tx
             .send(UiEvent::SendForm { letter, addresses })
+            .unwrap();
+    }
+
+    fn send_email(&mut self, letter: Letter, addresses: Vec<String>) {
+        self.ui_tx
+            .send(UiEvent::PresentInfo(format!(
+                "To: {:?}\n{:?}\n{:?}\n{:?}",
+                addresses,
+                letter.read().unwrap().topic,
+                letter.read().unwrap().text,
+                letter.read().unwrap().attachment_info()
+            )))
             .unwrap();
     }
 }
@@ -75,9 +97,10 @@ impl Controller {
 pub enum ControllerSignal {
     Noop,
     OpenSettings,
-    UpdateSettings(Settings),
-    AppendLetter(Letter),
+    SaveSettings,
+    NewLetter,
     OpenLetterToSend(Letter),
+    SendEmail { letter: Letter, to: Vec<String> },
     Quit,
 }
 

@@ -1,15 +1,20 @@
-use std::collections::BTreeMap;
+use std::{
+    collections::BTreeMap,
+    sync::{Arc, RwLock},
+};
 
 use lettre::message::SinglePart;
 
-#[derive(Debug, Clone)]
-pub struct Letter {
+pub type Letter = Arc<RwLock<LetterRepr>>;
+
+#[derive(Debug)]
+pub struct LetterRepr {
     pub topic: String,
     pub text: String,
     pub attachment: BTreeMap<String, SinglePart>,
 }
 
-impl Letter {
+impl LetterRepr {
     pub fn new() -> Self {
         Self {
             topic: "".into(),
@@ -18,15 +23,19 @@ impl Letter {
         }
     }
 
-    pub fn attachment_description(&self) -> String {
-        let mut description = vec![];
+    pub fn attachment_info(&self) -> String {
+        let mut info = vec![];
         for (a, b) in self.attachment.iter() {
-            description.push(format!("['{}' ({} байт)]", a, b.raw_body().len()));
+            info.push(format!("['{}' ({} байт)]", a, b.raw_body().len()));
         }
-        if description.is_empty() {
+        if info.is_empty() {
             "Вложений нет.".to_owned()
         } else {
-            format!("Вложения: {}.", description.join(", "))
+            format!("Вложения: {}.", info.join(", "))
         }
     }
+}
+
+pub fn create_new_letter() -> Letter {
+    Arc::new(RwLock::new(LetterRepr::new()))
 }
