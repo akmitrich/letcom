@@ -1,6 +1,9 @@
 use std::sync::mpsc;
 
-use crate::ui::{Ui, UiEvent};
+use crate::{
+    data_handler::persona::{Persona, PersonaContainer},
+    ui::{Ui, UiEvent},
+};
 
 use self::{
     letter::{create_new_letter, Letter},
@@ -10,6 +13,7 @@ use self::{
 pub struct Controller {
     ui_tx: mpsc::Sender<UiEvent>,
     settings: Settings,
+    persona_container: PersonaContainer,
     rx: mpsc::Receiver<ControllerSignal>,
     _tx: mpsc::Sender<ControllerSignal>,
 }
@@ -24,6 +28,7 @@ impl Controller {
         Self {
             ui_tx: ui_tx.clone(),
             settings,
+            persona_container: Default::default(),
             rx,
             _tx: tx.clone(),
         }
@@ -46,11 +51,9 @@ impl Controller {
                 OpenSettings => self.open_settings(),
                 SaveSettings => self.save_settings(),
                 NewLetter => self.new_letter(),
-                OpenLetterToSend(l) => self.open_letter_to_send(l),
-                SendEmail {
-                    letter,
-                    to: addresses,
-                } => self.send_email(letter, addresses),
+                OpenLetterToSend(letter) => self.open_letter_to_send(letter),
+                SendEmail { letter, to } => self.send_email(letter, to),
+                ImportPersona(p) => self.import_persona(p),
                 Quit => return false,
                 any => eprintln!("Unexpected controller signal: {:?}", any),
             }
@@ -58,13 +61,13 @@ impl Controller {
         true
     }
 
-    fn open_settings(&mut self) {
+    fn open_settings(&self) {
         self.ui_tx
             .send(UiEvent::SettingsForm(self.settings.clone()))
             .unwrap();
     }
 
-    fn save_settings(&mut self) {
+    fn save_settings(&self) {
         self.settings.read().unwrap().save();
     }
 
@@ -80,14 +83,27 @@ impl Controller {
             .unwrap();
     }
 
-    fn send_email(&mut self, letter: Letter, addresses: Vec<String>) {
+    fn send_email(&mut self, letter: Letter, to: Vec<String>) {
         self.ui_tx
             .send(UiEvent::PresentInfo(format!(
                 "To: {:?}\n{:?}\n{:?}\n{:?}",
-                addresses,
+                to,
                 letter.read().unwrap().topic,
                 letter.read().unwrap().text,
                 letter.read().unwrap().attachment_info()
+            )))
+            .unwrap();
+    }
+
+    fn import_persona(&mut self, persona: Vec<Persona>) {
+        let count = persona.len();
+        for persona in persona {
+            self.persona_container.update_persona(persona);
+        }
+        self.ui_tx
+            .send(UiEvent::PresentInfo(format!(
+                "Импортировано {count} персон. Теперь у нас {} персон.",
+                self.persona_container.len()
             )))
             .unwrap();
     }
@@ -101,6 +117,7 @@ pub enum ControllerSignal {
     NewLetter,
     OpenLetterToSend(Letter),
     SendEmail { letter: Letter, to: Vec<String> },
+    ImportPersona(Vec<Persona>),
     Quit,
 }
 

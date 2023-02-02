@@ -99,6 +99,10 @@ fn init_menu(
 ) {
     let menu = siv.menubar();
     let tx = controller_tx.clone();
+    menu.add_subtree(
+        "Persona",
+        menus::persona::persona_menu(controller_tx, ui_tx),
+    );
     menu.add_subtree("Email", menus::email::email_menu(controller_tx, ui_tx));
     menu.add_leaf("Quit", move |_| tx.send(ControllerSignal::Quit).unwrap());
     siv.add_global_callback(Key::Esc, |c| c.select_menubar());
