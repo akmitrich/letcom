@@ -54,6 +54,7 @@ impl Controller {
                 OpenLetterToSend(letter) => self.open_letter_to_send(letter),
                 SendEmail { letter, to } => self.send_email(letter, to),
                 ImportPersona(p) => self.import_persona(p),
+                SelectPersona => self.select_persona(),
                 Quit => return false,
                 any => eprintln!("Unexpected controller signal: {:?}", any),
             }
@@ -107,6 +108,14 @@ impl Controller {
             )))
             .unwrap();
     }
+
+    fn select_persona(&self) {
+        self.ui_tx
+            .send(UiEvent::SelectPersonaForm(
+                self.persona_container.all_persona().collect(),
+            ))
+            .unwrap();
+    }
 }
 
 #[derive(Debug)]
@@ -118,6 +127,7 @@ pub enum ControllerSignal {
     OpenLetterToSend(Letter),
     SendEmail { letter: Letter, to: Vec<String> },
     ImportPersona(Vec<Persona>),
+    SelectPersona,
     Quit,
 }
 

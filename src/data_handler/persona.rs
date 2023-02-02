@@ -42,6 +42,14 @@ impl PersonaContainer {
         self.container.len()
     }
 
+    pub fn all_identities(&self) -> Vec<&String> {
+        self.container.keys().collect()
+    }
+
+    pub fn all_persona(&self) -> impl Iterator<Item = Persona> + '_ {
+        self.container.values().cloned()
+    }
+
     pub fn update_persona(&mut self, persona: Persona) {
         let key = persona.read().unwrap().identity();
         self.container

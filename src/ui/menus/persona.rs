@@ -12,10 +12,15 @@ pub fn persona_menu(
     controller_tx: &mpsc::Sender<ControllerSignal>,
     ui_tx: &mpsc::Sender<UiEvent>,
 ) -> Tree {
-    let tree = Tree::new();
+    let mut tree = Tree::new();
+    let select_tx = controller_tx.clone();
+    tree.add_leaf("Select...", move |_| {
+        select_tx.send(ControllerSignal::SelectPersona).unwrap()
+    });
     let info_tx = ui_tx.clone();
     let import_tx = controller_tx.clone();
-    tree.delimiter().leaf("Import 'persona.tsv'", move |_| {
+    tree.add_delimiter();
+    tree.add_leaf("Import 'persona.tsv'", move |_| {
         if let Ok(f) = fs::File::open("persona.tsv") {
             let import = io::BufReader::new(f)
                 .lines()
@@ -33,5 +38,6 @@ pub fn persona_menu(
                 )))
                 .unwrap();
         }
-    })
+    });
+    tree
 }

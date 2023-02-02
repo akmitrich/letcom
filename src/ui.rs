@@ -7,7 +7,12 @@ use cursive::{
     Cursive, CursiveRunner,
 };
 
-use crate::controller::{letter::Letter, settings::Settings, ControllerSignal};
+use crate::{
+    controller::{letter::Letter, settings::Settings, ControllerSignal},
+    data_handler::persona::Persona,
+};
+
+use self::forms::selectpersona::SelectPersonaForm;
 
 pub struct Ui {
     runner: CursiveRunner<Cursive>,
@@ -57,6 +62,7 @@ impl Ui {
                 SettingsForm(settings) => self.settings_form(settings),
                 LetterForm(letter) => self.letter_form(letter),
                 SendForm { letter, addresses } => self.send_letter_form(letter, addresses),
+                SelectPersonaForm(persona) => self.select_persona_form(persona),
                 PresentInfo(ref info) => self.present_info(info),
                 any => eprintln!("Unexpected UI event {:?}", any),
             }
@@ -87,8 +93,12 @@ impl Ui {
             ));
     }
 
+    fn select_persona_form(&mut self, persona: Vec<Persona>) {
+        self.runner.add_layer(SelectPersonaForm::new());
+    }
+
     fn present_info(&mut self, info: &str) {
-        self.runner.add_layer(Dialog::info(info))
+        self.runner.add_layer(Dialog::info(info));
     }
 }
 
@@ -125,6 +135,7 @@ pub enum UiEvent {
         letter: Letter,
         addresses: Vec<String>,
     },
+    SelectPersonaForm(Vec<Persona>),
     PresentInfo(String),
 }
 
