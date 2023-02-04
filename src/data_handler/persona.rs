@@ -1,6 +1,7 @@
 use std::{
     collections::BTreeMap,
     fs,
+    io::Write,
     path::Path,
     sync::{Arc, RwLock},
 };
@@ -62,14 +63,29 @@ impl PersonaContainer {
             .or_insert(persona);
     }
 
+    pub fn remove(&mut self, persona: Persona) {
+        self.container.remove(&persona.read().unwrap().identity());
+    }
+
+    pub fn finalize_persona_container(&self, path: impl AsRef<Path>) {
+        if let Ok(mut file) = fs::File::create(path) {
+            write!(file, "{}", self.to_json()).unwrap()
+        };
+    }
+
     pub fn from_json(json: &str) -> Option<Self> {
+        let persona: Vec<Persona> = serde_json::from_str(json).ok()?;
         Some(Self {
-            container: serde_json::from_str(json).ok()?,
+            container: persona
+                .into_iter()
+                .map(|person| (person.clone().read().unwrap().identity(), person))
+                .collect(),
         })
     }
 
     pub fn to_json(&self) -> String {
-        serde_json::to_string(&self.container).unwrap()
+        let persona = self.container.values().collect::<Vec<_>>();
+        serde_json::to_string(&persona).unwrap()
     }
 }
 
@@ -99,7 +115,7 @@ pub fn import_persona(data: &str) -> Option<Persona> {
     ))))
 }
 
-pub fn restore_persona(path: impl AsRef<Path>) -> Option<PersonaContainer> {
+pub fn restore_persona_container(path: impl AsRef<Path>) -> Option<PersonaContainer> {
     let json = fs::read_to_string(path).ok()?;
     PersonaContainer::from_json(&json)
 }

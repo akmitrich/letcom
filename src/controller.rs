@@ -1,7 +1,7 @@
-use std::{fs, io::Write, sync::mpsc};
+use std::sync::mpsc;
 
 use crate::{
-    data_handler::persona::{restore_persona, Persona, PersonaContainer},
+    data_handler::persona::{restore_persona_container, Persona, PersonaContainer},
     ui::{Ui, UiEvent},
 };
 
@@ -9,6 +9,8 @@ use self::{
     letter::{create_new_letter, Letter},
     settings::{load_settings, Settings},
 };
+
+const PERSONA_CONTAINER_PATH: &str = "persona.json";
 
 pub struct Controller {
     ui_tx: mpsc::Sender<UiEvent>,
@@ -25,7 +27,8 @@ impl Controller {
         ui_tx: &mpsc::Sender<UiEvent>,
     ) -> Self {
         let settings = load_settings();
-        let persona_container = restore_persona("persona.json").unwrap_or_default();
+        let persona_container =
+            restore_persona_container(PERSONA_CONTAINER_PATH).unwrap_or_default();
         Self {
             ui_tx: ui_tx.clone(),
             settings,
@@ -56,6 +59,7 @@ impl Controller {
                 SendEmail { letter, to } => self.send_email(letter, to),
                 ImportPersona(p) => self.import_persona(p),
                 SelectPersona => self.select_persona(),
+                RemovePersona(p) => self.remove_persona(p),
                 Quit => return self.finalize(),
                 any => eprintln!("Unexpected controller signal: {:?}", any),
             }
@@ -118,9 +122,13 @@ impl Controller {
             .unwrap();
     }
 
+    fn remove_persona(&mut self, persona: Persona) {
+        self.persona_container.remove(persona);
+    }
+
     fn finalize(&mut self) -> bool {
-        let mut file = fs::File::create("persona.json").unwrap();
-        write!(file, "{}", self.persona_container.to_json()).unwrap();
+        self.persona_container
+            .finalize_persona_container(PERSONA_CONTAINER_PATH);
         false
     }
 }
@@ -135,6 +143,7 @@ pub enum ControllerSignal {
     SendEmail { letter: Letter, to: Vec<String> },
     ImportPersona(Vec<Persona>),
     SelectPersona,
+    RemovePersona(Persona),
     Quit,
 }
 

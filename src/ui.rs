@@ -12,7 +12,9 @@ use crate::{
     data_handler::persona::Persona,
 };
 
-use self::forms::selectpersona::SelectPersonaForm;
+use self::{
+    dialogs::remove_persona::remove_persona_dialog, forms::selectpersona::SelectPersonaForm,
+};
 
 pub struct Ui {
     runner: CursiveRunner<Cursive>,
@@ -50,6 +52,11 @@ impl Ui {
             self.controller_tx.send(ControllerSignal::Quit).unwrap();
         }
     }
+
+    pub fn remove_persona_dialog(&mut self, persona: Persona) {
+        self.runner
+            .add_layer(remove_persona_dialog(persona, &self.controller_tx));
+    }
 }
 
 impl Ui {
@@ -63,6 +70,7 @@ impl Ui {
                 LetterForm(letter) => self.letter_form(letter),
                 SendForm { letter, addresses } => self.send_letter_form(letter, addresses),
                 SelectPersonaForm(persona) => self.select_persona_form(persona),
+                RemovePersonaDialog(persona) => self.remove_persona_dialog(persona),
                 PresentInfo(ref info) => self.present_info(info),
                 any => eprintln!("Unexpected UI event {:?}", any),
             }
@@ -145,6 +153,7 @@ pub enum UiEvent {
         addresses: Vec<String>,
     },
     SelectPersonaForm(Vec<Persona>),
+    RemovePersonaDialog(Persona),
     PresentInfo(String),
 }
 

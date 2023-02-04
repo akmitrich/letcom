@@ -3,3 +3,4 @@ pub trait SetData {
 }
 
 pub mod open_file;
+pub mod remove_persona;
