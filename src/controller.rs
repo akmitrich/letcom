@@ -1,7 +1,7 @@
-use std::sync::mpsc;
+use std::{fs, io::Write, sync::mpsc};
 
 use crate::{
-    data_handler::persona::{Persona, PersonaContainer},
+    data_handler::persona::{restore_persona, Persona, PersonaContainer},
     ui::{Ui, UiEvent},
 };
 
@@ -25,10 +25,11 @@ impl Controller {
         ui_tx: &mpsc::Sender<UiEvent>,
     ) -> Self {
         let settings = load_settings();
+        let persona_container = restore_persona("persona.json").unwrap_or_default();
         Self {
             ui_tx: ui_tx.clone(),
             settings,
-            persona_container: Default::default(),
+            persona_container,
             rx,
             _tx: tx.clone(),
         }
@@ -55,7 +56,7 @@ impl Controller {
                 SendEmail { letter, to } => self.send_email(letter, to),
                 ImportPersona(p) => self.import_persona(p),
                 SelectPersona => self.select_persona(),
-                Quit => return false,
+                Quit => return self.finalize(),
                 any => eprintln!("Unexpected controller signal: {:?}", any),
             }
         }
@@ -115,6 +116,12 @@ impl Controller {
                 self.persona_container.all_persona().collect(),
             ))
             .unwrap();
+    }
+
+    fn finalize(&mut self) -> bool {
+        let mut file = fs::File::create("persona.json").unwrap();
+        write!(file, "{}", self.persona_container.to_json()).unwrap();
+        false
     }
 }
 

@@ -94,7 +94,16 @@ impl Ui {
     }
 
     fn select_persona_form(&mut self, persona: Vec<Persona>) {
-        self.runner.add_layer(SelectPersonaForm::new());
+        if persona.is_empty() {
+            self.tx
+                .send(UiEvent::PresentInfo(
+                    "В данный момент у меня в памяти никого нет.\nДобавьте персон!".into(),
+                ))
+                .unwrap();
+        } else {
+            self.runner
+                .add_layer(SelectPersonaForm::new(persona, &self.tx));
+        }
     }
 
     fn present_info(&mut self, info: &str) {

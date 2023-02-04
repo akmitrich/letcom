@@ -1,11 +1,15 @@
 use std::{
     collections::BTreeMap,
+    fs,
+    path::Path,
     sync::{Arc, RwLock},
 };
 
+use serde::{Deserialize, Serialize};
+
 pub type Persona = Arc<RwLock<PersonaRepr>>;
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct PersonaRepr {
     family: String,
     name: String,
@@ -57,6 +61,20 @@ impl PersonaContainer {
             .and_modify(|old_persona| *old_persona = Arc::clone(&persona))
             .or_insert(persona);
     }
+
+    pub fn from_json(json: &str) -> Option<Self> {
+        Some(Self {
+            container: serde_json::from_str(json).ok()?,
+        })
+    }
+
+    pub fn to_json(&self) -> String {
+        serde_json::to_string(&self.container).unwrap()
+    }
+}
+
+pub fn new_persona() -> Persona {
+    Arc::new(RwLock::new(PersonaRepr::new("", "", "", "")))
 }
 
 pub fn import_persona(data: &str) -> Option<Persona> {
@@ -79,4 +97,9 @@ pub fn import_persona(data: &str) -> Option<Persona> {
         data.get(SURNAME)?.trim(),
         data.get(EMAIL1)?.trim(),
     ))))
+}
+
+pub fn restore_persona(path: impl AsRef<Path>) -> Option<PersonaContainer> {
+    let json = fs::read_to_string(path).ok()?;
+    PersonaContainer::from_json(&json)
 }
