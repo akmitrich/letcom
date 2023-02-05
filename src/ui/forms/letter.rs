@@ -3,7 +3,7 @@ use std::{fs, sync::mpsc};
 use cursive::{
     event::{Event, EventResult, Key, MouseButton, MouseEvent},
     view::{Scrollable, ViewWrapper},
-    views::{Dialog, DialogFocus, LinearLayout, ResizedView, ScrollView, TextArea, TextView},
+    views::{Dialog, DialogFocus, LinearLayout, ScrollView, TextArea, TextView},
     wrap_impl, View,
 };
 use lettre::message::{header::ContentType, Attachment};
@@ -12,7 +12,7 @@ use crate::{
     controller::{letter::Letter, ControllerSignal},
     ui::{
         dialogs::{open_file::OpenFileDialog, SetData},
-        utils::{dismiss, text_entry_full_width},
+        utils::{dismiss, get_area_from, text_entry_full_width},
         UiEvent,
     },
 };
@@ -76,25 +76,8 @@ impl LetterForm {
 }
 
 impl LetterForm {
-    fn get_area(&mut self, index: usize) -> &TextArea {
-        let scroll = self
-            .view
-            .get_content()
-            .downcast_ref::<ScrollView<LinearLayout>>()
-            .unwrap();
-        let entry = scroll
-            .get_inner()
-            .get_child(index)
-            .unwrap()
-            .downcast_ref::<LinearLayout>()
-            .unwrap();
-        let widget = entry
-            .get_child(2)
-            .unwrap()
-            .downcast_ref::<ResizedView<TextArea>>()
-            .unwrap()
-            .get_inner();
-        widget
+    fn get_area(&self, n: usize) -> &TextArea {
+        get_area_from(&self.view, n)
     }
 
     fn update_attachments(&mut self) {
@@ -154,9 +137,9 @@ impl LetterForm {
 }
 
 impl SetData for LetterForm {
-    fn set_data(&mut self, data: &[String]) {
+    fn set_data(&mut self, data: impl Iterator<Item = String>) {
         for x in data {
-            self.set_filename(x);
+            self.set_filename(&x);
         }
     }
 }

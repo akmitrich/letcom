@@ -13,7 +13,8 @@ use crate::{
 };
 
 use self::{
-    dialogs::remove_persona::remove_persona_dialog, forms::selectpersona::SelectPersonaForm,
+    dialogs::remove_persona::remove_persona_dialog,
+    forms::{editpersona::EditPersonaForm, selectpersona::SelectPersonaForm},
 };
 
 pub struct Ui {
@@ -70,6 +71,7 @@ impl Ui {
                 LetterForm(letter) => self.letter_form(letter),
                 SendForm { letter, addresses } => self.send_letter_form(letter, addresses),
                 SelectPersonaForm(persona) => self.select_persona_form(persona),
+                EditPersonaForm(persona) => self.edit_persona_form(persona),
                 RemovePersonaDialog(persona) => self.remove_persona_dialog(persona),
                 PresentInfo(ref info) => self.present_info(info),
                 any => eprintln!("Unexpected UI event {:?}", any),
@@ -114,6 +116,10 @@ impl Ui {
         }
     }
 
+    fn edit_persona_form(&mut self, persona: Persona) {
+        self.runner.add_layer(EditPersonaForm::new(persona));
+    }
+
     fn present_info(&mut self, info: &str) {
         self.runner.add_layer(Dialog::info(info));
     }
@@ -153,6 +159,7 @@ pub enum UiEvent {
         addresses: Vec<String>,
     },
     SelectPersonaForm(Vec<Persona>),
+    EditPersonaForm(Persona),
     RemovePersonaDialog(Persona),
     PresentInfo(String),
 }

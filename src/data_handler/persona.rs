@@ -32,8 +32,36 @@ impl PersonaRepr {
         format!("{} {} {}", self.family, self.name, self.surname)
     }
 
-    pub fn email(&self) -> &str {
+    pub fn get_family(&self) -> &str {
+        &self.family
+    }
+
+    pub fn set_family(&mut self, family: String) {
+        self.family = family;
+    }
+
+    pub fn get_name(&self) -> &str {
+        &self.name
+    }
+
+    pub fn set_name(&mut self, name: String) {
+        self.name = name;
+    }
+
+    pub fn get_surname(&self) -> &str {
+        &self.surname
+    }
+
+    pub fn set_surname(&mut self, surname: String) {
+        self.surname = surname;
+    }
+
+    pub fn get_email(&self) -> &str {
         &self.email
+    }
+
+    pub fn set_email(&mut self, email: String) {
+        self.email = email;
     }
 }
 

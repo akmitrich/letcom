@@ -37,10 +37,7 @@ impl SelectPersonaForm {
     fn event_edit(&self) -> EventResult {
         if let Some(selected_persona) = self.get_selected_persona() {
             self.ui_tx
-                .send(UiEvent::PresentInfo(format!(
-                    "Будем редактировать {:?}",
-                    selected_persona.read().unwrap().identity()
-                )))
+                .send(UiEvent::EditPersonaForm(selected_persona))
                 .unwrap();
         } else {
             self.no_selection_info("редактирования");

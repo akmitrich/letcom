@@ -31,25 +31,12 @@ impl<P: SetData + ViewWrapper> OpenFileDialog<P> {
     fn button_event(&mut self, button: usize) -> EventResult {
         match button {
             0 => {
-                let filename = self
-                    .view
-                    .get_content()
-                    .downcast_ref::<ScrollView<LinearLayout>>()
-                    .unwrap()
-                    .get_inner()
-                    .get_child(2)
-                    .unwrap()
-                    .downcast_ref::<ResizedView<TextArea>>()
-                    .unwrap()
-                    .get_inner()
-                    .get_content()
-                    .to_string();
+                let filename = self.get_filenames().collect::<Vec<_>>();
                 let parent_name = self.parent_name;
                 EventResult::with_cb_once(move |c| {
                     let parent_name = parent_name.to_string();
                     if let Some(mut parent) = c.find_name::<P>(&parent_name) {
-                        let filename = vec![filename];
-                        parent.set_data(&filename);
+                        parent.set_data(filename.into_iter());
                     } else {
                         panic!("Unable to find parent window");
                     }
@@ -59,6 +46,25 @@ impl<P: SetData + ViewWrapper> OpenFileDialog<P> {
             1 => dismiss(),
             _ => EventResult::Ignored,
         }
+    }
+}
+
+impl<P> OpenFileDialog<P> {
+    fn get_filenames(&self) -> impl Iterator<Item = String> + '_ {
+        [self
+            .view
+            .get_content()
+            .downcast_ref::<ScrollView<LinearLayout>>()
+            .unwrap()
+            .get_inner()
+            .get_child(2)
+            .unwrap()
+            .downcast_ref::<ResizedView<TextArea>>()
+            .unwrap()
+            .get_inner()
+            .get_content()
+            .to_string()]
+        .into_iter()
     }
 }
 

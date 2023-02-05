@@ -1,5 +1,5 @@
 pub trait SetData {
-    fn set_data(&mut self, data: &[String]);
+    fn set_data(&mut self, data: impl Iterator<Item = String>);
 }
 
 pub mod open_file;
