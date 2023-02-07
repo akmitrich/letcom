@@ -12,41 +12,27 @@ use crate::{
     data_handler::persona::Persona,
 };
 
-use self::{
-    dialogs::remove_persona::remove_persona_dialog,
-    forms::{editpersona::EditPersonaForm, selectpersona::SelectPersonaForm},
-};
-
 pub struct Ui {
     runner: CursiveRunner<Cursive>,
     controller_tx: mpsc::Sender<ControllerSignal>,
-    rx: mpsc::Receiver<UiEvent>,
-    tx: mpsc::Sender<UiEvent>,
 }
 
 impl Ui {
-    pub fn new(
-        rx: mpsc::Receiver<UiEvent>,
-        tx: &mpsc::Sender<UiEvent>,
-        controller_tx: &mpsc::Sender<ControllerSignal>,
-    ) -> Self {
+    pub fn new(controller_tx: &mpsc::Sender<ControllerSignal>) -> Self {
         let ncurses = cursive::backends::curses::n::Backend::init().unwrap();
         let mut runner = CursiveRunner::new(Cursive::default(), ncurses);
         let controller_tx = controller_tx.clone();
-        init_menu(&mut runner, &controller_tx, tx);
+        init_menu(&mut runner, &controller_tx);
         init_view(&mut runner);
         runner.refresh();
         Self {
             runner,
-            rx,
-            tx: tx.clone(),
             controller_tx,
         }
     }
 
     pub fn step_next(&mut self) {
         if self.runner.is_running() {
-            self.process_messages();
             self.runner.step();
             self.runner.refresh();
         } else {
@@ -56,45 +42,30 @@ impl Ui {
 
     pub fn remove_persona_dialog(&mut self, persona: Persona) {
         self.runner
-            .add_layer(remove_persona_dialog(persona, &self.controller_tx));
+            .add_layer(dialogs::remove_persona::remove_persona_dialog(
+                persona,
+                &self.controller_tx,
+            ));
     }
 }
 
 impl Ui {
-    fn process_messages(&mut self) {
-        use UiEvent::*;
-        if let Ok(event) = self.rx.try_recv() {
-            #[allow(unreachable_patterns)]
-            match event {
-                Noop => self.runner.refresh(),
-                SettingsForm(settings) => self.settings_form(settings),
-                LetterForm(letter) => self.letter_form(letter),
-                SendForm { letter, addresses } => self.send_letter_form(letter, addresses),
-                SelectPersonaForm(persona) => self.select_persona_form(persona),
-                EditPersonaForm(persona) => self.edit_persona_form(persona),
-                RemovePersonaDialog(persona) => self.remove_persona_dialog(persona),
-                PresentInfo(ref info) => self.present_info(info),
-                any => eprintln!("Unexpected UI event {:?}", any),
-            }
-        }
-    }
-
-    fn settings_form(&mut self, settings: Settings) {
+    pub(crate) fn settings_form(&mut self, settings: Settings) {
         self.runner.add_layer(forms::settings::SettingsForm::new(
             settings,
             &self.controller_tx,
         ))
     }
 
-    fn letter_form(&mut self, letter: Letter) {
+    pub(crate) fn letter_form(&mut self, letter: Letter) {
         let letter_form_id = uuid::Uuid::new_v4();
         self.runner.add_layer(
-            forms::letter::LetterForm::new(letter_form_id, letter, &self.controller_tx, &self.tx)
+            forms::letter::LetterForm::new(letter_form_id, letter, &self.controller_tx)
                 .with_name(letter_form_id.to_string()),
         );
     }
 
-    fn send_letter_form(&mut self, letter: Letter, addresses: Vec<String>) {
+    pub(crate) fn send_letter_form(&mut self, letter: Letter, addresses: Vec<String>) {
         self.runner
             .add_layer(forms::sendletter::SendLetterForm::new(
                 letter,
@@ -103,40 +74,37 @@ impl Ui {
             ));
     }
 
-    fn select_persona_form(&mut self, persona: Vec<Persona>) {
+    pub(crate) fn select_persona_form(&mut self, persona: Vec<Persona>) {
         if persona.is_empty() {
-            self.tx
-                .send(UiEvent::PresentInfo(
+            self.controller_tx
+                .send(ControllerSignal::Log(
                     "В данный момент у меня в памяти никого нет.\nДобавьте персон!".into(),
                 ))
                 .unwrap();
         } else {
             self.runner
-                .add_layer(SelectPersonaForm::new(persona, &self.tx));
+                .add_layer(forms::selectpersona::SelectPersonaForm::new(
+                    persona,
+                    &self.controller_tx,
+                ));
         }
     }
 
-    fn edit_persona_form(&mut self, persona: Persona) {
-        self.runner.add_layer(EditPersonaForm::new(persona));
+    pub(crate) fn edit_persona_form(&mut self, persona: Persona) {
+        self.runner
+            .add_layer(forms::editpersona::EditPersonaForm::new(persona));
     }
 
-    fn present_info(&mut self, info: &str) {
-        self.runner.add_layer(Dialog::info(info));
+    pub(crate) fn present_info(&mut self, info: impl AsRef<str>) {
+        self.runner.add_layer(Dialog::info(info.as_ref()));
     }
 }
 
-fn init_menu(
-    siv: &mut Cursive,
-    controller_tx: &mpsc::Sender<ControllerSignal>,
-    ui_tx: &mpsc::Sender<UiEvent>,
-) {
+fn init_menu(siv: &mut Cursive, controller_tx: &mpsc::Sender<ControllerSignal>) {
     let menu = siv.menubar();
+    menu.add_subtree("Persona", menus::persona::persona_menu(controller_tx));
+    menu.add_subtree("Email", menus::email::email_menu(controller_tx));
     let tx = controller_tx.clone();
-    menu.add_subtree(
-        "Persona",
-        menus::persona::persona_menu(controller_tx, ui_tx),
-    );
-    menu.add_subtree("Email", menus::email::email_menu(controller_tx, ui_tx));
     menu.add_leaf("Quit", move |_| tx.send(ControllerSignal::Quit).unwrap());
     siv.add_global_callback(Key::Esc, |c| c.select_menubar());
     siv.set_autohide_menu(false);
@@ -147,21 +115,6 @@ fn init_view(siv: &mut Cursive) {
         "Вас приветствует составитель писем!\nPress Ctrl-q to quit.",
     ));
     siv.add_global_callback(Event::CtrlChar('q'), Cursive::quit);
-}
-
-#[derive(Debug)]
-pub enum UiEvent {
-    Noop,
-    SettingsForm(Settings),
-    LetterForm(Letter),
-    SendForm {
-        letter: Letter,
-        addresses: Vec<String>,
-    },
-    SelectPersonaForm(Vec<Persona>),
-    EditPersonaForm(Persona),
-    RemovePersonaDialog(Persona),
-    PresentInfo(String),
 }
 
 mod dialogs;

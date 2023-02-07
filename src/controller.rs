@@ -7,7 +7,7 @@ use crate::{
         tag::TagContainer,
         Represent,
     },
-    ui::{Ui, UiEvent},
+    ui::Ui,
 };
 
 use self::{
@@ -19,38 +19,35 @@ const PERSONA_CONTAINER_PATH: &str = "persona.json";
 const TAG_CONTAINER_PATH: &str = "tag.json";
 
 pub struct Controller {
-    ui_tx: mpsc::Sender<UiEvent>,
+    ui: Ui,
     settings: Settings,
     persona_container: PersonaContainer,
     tag_container: TagContainer,
     rx: mpsc::Receiver<ControllerSignal>,
-    _tx: mpsc::Sender<ControllerSignal>,
+    tx: mpsc::Sender<ControllerSignal>,
 }
 
 impl Controller {
-    pub fn new(
-        rx: mpsc::Receiver<ControllerSignal>,
-        tx: &mpsc::Sender<ControllerSignal>,
-        ui_tx: &mpsc::Sender<UiEvent>,
-    ) -> Self {
+    pub fn new() -> Self {
+        let (tx, rx) = mpsc::channel();
+        let ui = Ui::new(&tx);
         let settings = load_settings();
         let persona_container =
             restore_persona_container(PERSONA_CONTAINER_PATH).unwrap_or_default();
         let tag_container = restore(TAG_CONTAINER_PATH).unwrap_or_default();
-        eprintln!("Start tag container = {:?}", tag_container);
         Self {
-            ui_tx: ui_tx.clone(),
+            ui,
             settings,
             persona_container,
             tag_container,
             rx,
-            _tx: tx.clone(),
+            tx,
         }
     }
 
-    pub fn run(&mut self, ui: &mut Ui) {
+    pub fn run(&mut self) {
         while self.process_signals() {
-            ui.step_next();
+            self.ui.step_next();
         }
     }
 }
@@ -62,6 +59,7 @@ impl Controller {
             #[allow(unreachable_patterns)]
             match signal {
                 Noop => {}
+                Log(info) => self.log(info),
                 OpenSettings => self.open_settings(),
                 SaveSettings => self.save_settings(),
                 NewLetter => self.new_letter(),
@@ -69,6 +67,8 @@ impl Controller {
                 SendEmail { letter, to } => self.send_email(letter, to),
                 ImportPersona(p) => self.import_persona(p),
                 SelectPersona => self.select_persona(),
+                EditPersona(p) => self.edit_persona(p),
+                RemovePersonaAlert(p) => self.remove_persona_alert(p),
                 RemovePersona(p) => self.remove_persona(p),
                 Quit => return self.finalize(),
                 any => eprintln!("Unexpected controller signal: {:?}", any),
@@ -77,10 +77,12 @@ impl Controller {
         true
     }
 
-    fn open_settings(&self) {
-        self.ui_tx
-            .send(UiEvent::SettingsForm(self.settings.clone()))
-            .unwrap();
+    fn log(&mut self, info: impl AsRef<str>) {
+        self.ui.present_info(info);
+    }
+
+    fn open_settings(&mut self) {
+        self.ui.settings_form(self.settings.clone());
     }
 
     fn save_settings(&self) {
@@ -89,19 +91,17 @@ impl Controller {
 
     fn new_letter(&mut self) {
         let letter = create_new_letter();
-        self.ui_tx.send(UiEvent::LetterForm(letter)).unwrap();
+        self.ui.letter_form(letter);
     }
 
     fn open_letter_to_send(&mut self, letter: Letter) {
         let addresses = vec!["ak.mitrich@mail.ru".to_owned()];
-        self.ui_tx
-            .send(UiEvent::SendForm { letter, addresses })
-            .unwrap();
+        self.ui.send_letter_form(letter, addresses);
     }
 
     fn send_email(&mut self, letter: Letter, to: Vec<String>) {
-        self.ui_tx
-            .send(UiEvent::PresentInfo(format!(
+        self.tx
+            .send(ControllerSignal::Log(format!(
                 "To: {:?}\n{:?}\n{:?}\n{:?}",
                 to,
                 letter.read().unwrap().topic,
@@ -117,8 +117,8 @@ impl Controller {
             let identity = persona.read().unwrap().identity();
             self.persona_container.update(identity, persona);
         }
-        self.ui_tx
-            .send(UiEvent::PresentInfo(format!(
+        self.tx
+            .send(ControllerSignal::Log(format!(
                 "Импортировано {count} персон. Теперь у нас {} персон.",
                 self.persona_container.size()
             )))
@@ -126,11 +126,16 @@ impl Controller {
     }
 
     fn select_persona(&mut self) {
-        self.ui_tx
-            .send(UiEvent::SelectPersonaForm(
-                self.persona_container.all_representations().collect(),
-            ))
-            .unwrap();
+        self.ui
+            .select_persona_form(self.persona_container.all_representations().collect())
+    }
+
+    fn edit_persona(&mut self, persona: Persona) {
+        self.ui.edit_persona_form(persona);
+    }
+
+    fn remove_persona_alert(&mut self, persona: Persona) {
+        self.ui.remove_persona_dialog(persona);
     }
 
     fn remove_persona(&mut self, persona: Persona) {
@@ -147,6 +152,7 @@ impl Controller {
 #[derive(Debug)]
 pub enum ControllerSignal {
     Noop,
+    Log(String),
     OpenSettings,
     SaveSettings,
     NewLetter,
@@ -154,6 +160,8 @@ pub enum ControllerSignal {
     SendEmail { letter: Letter, to: Vec<String> },
     ImportPersona(Vec<Persona>),
     SelectPersona,
+    EditPersona(Persona),
+    RemovePersonaAlert(Persona),
     RemovePersona(Persona),
     Quit,
 }

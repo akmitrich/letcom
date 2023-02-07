@@ -13,7 +13,6 @@ use crate::{
     ui::{
         dialogs::{open_file::OpenFileDialog, SetData},
         utils::{dismiss, get_area_from, text_entry_full_width},
-        UiEvent,
     },
 };
 
@@ -22,7 +21,6 @@ pub struct LetterForm {
     name: uuid::Uuid,
     letter: Letter,
     controller_tx: mpsc::Sender<ControllerSignal>,
-    ui_tx: mpsc::Sender<UiEvent>,
 }
 
 impl LetterForm {
@@ -30,14 +28,12 @@ impl LetterForm {
         name: uuid::Uuid,
         letter: Letter,
         controller_tx: &mpsc::Sender<ControllerSignal>,
-        ui_tx: &mpsc::Sender<UiEvent>,
     ) -> Self {
         let mut form = Self {
             view: init_dialog(&letter),
             name,
             letter,
             controller_tx: controller_tx.clone(),
-            ui_tx: ui_tx.clone(),
         };
         form.update_attachments();
         form
@@ -55,8 +51,8 @@ impl LetterForm {
                     .unwrap()
                     .attachment
                     .insert(filename.to_owned(), attachment);
-                self.ui_tx
-                    .send(UiEvent::PresentInfo(format!(
+                self.controller_tx
+                    .send(ControllerSignal::Log(format!(
                         "Загружен файл: '{}'\n({} байт)",
                         filename.to_owned(),
                         size
@@ -64,8 +60,8 @@ impl LetterForm {
                     .unwrap();
             }
             Err(ref read_error) => self
-                .ui_tx
-                .send(UiEvent::PresentInfo(format!(
+                .controller_tx
+                .send(ControllerSignal::Log(format!(
                     "Случилось непредвиденное:\n{}",
                     read_error
                 )))

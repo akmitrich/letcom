@@ -6,18 +6,14 @@ use std::{
 
 use cursive::menu::Tree;
 
-use crate::{controller::ControllerSignal, data_handler::persona::import_persona, ui::UiEvent};
+use crate::{controller::ControllerSignal, data_handler::persona::import_persona};
 
-pub fn persona_menu(
-    controller_tx: &mpsc::Sender<ControllerSignal>,
-    ui_tx: &mpsc::Sender<UiEvent>,
-) -> Tree {
+pub fn persona_menu(controller_tx: &mpsc::Sender<ControllerSignal>) -> Tree {
     let mut tree = Tree::new();
     let select_tx = controller_tx.clone();
     tree.add_leaf("Select...", move |_| {
         select_tx.send(ControllerSignal::SelectPersona).unwrap()
     });
-    let info_tx = ui_tx.clone();
     let import_tx = controller_tx.clone();
     tree.add_delimiter();
     tree.add_leaf("Import 'persona.tsv'", move |_| {
@@ -32,8 +28,8 @@ pub fn persona_menu(
                 .send(ControllerSignal::ImportPersona(import))
                 .unwrap();
         } else {
-            info_tx
-                .send(UiEvent::PresentInfo(format!(
+            import_tx
+                .send(ControllerSignal::Log(format!(
                     "Открытие файла 'persona.tsv' завершилось провалом!"
                 )))
                 .unwrap();
