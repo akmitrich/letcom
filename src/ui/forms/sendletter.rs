@@ -45,7 +45,13 @@ impl SendLetterForm {
 
     fn do_send(&mut self) -> EventResult {
         self.update_letter();
-        EventResult::Ignored
+        self.controller_tx
+            .send(ControllerSignal::SendEmail {
+                letter: self.letter.clone(),
+                to: self.get_chosen_addresses(),
+            })
+            .unwrap();
+        dismiss()
     }
 
     fn event_cancel(&self) -> EventResult {
@@ -57,12 +63,6 @@ impl SendLetterForm {
         let text = self.get_letter_area(1).get_content().to_string();
         self.letter.write().unwrap().topic = topic;
         self.letter.write().unwrap().text = text;
-        self.controller_tx
-            .send(ControllerSignal::SendEmail {
-                letter: self.letter.clone(),
-                to: self.get_chosen_addresses(),
-            })
-            .unwrap();
     }
 
     fn get_chosen_addresses(&self) -> Vec<String> {

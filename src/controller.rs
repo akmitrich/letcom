@@ -1,7 +1,11 @@
 use std::sync::mpsc;
 
 use crate::{
-    data_handler::persona::{restore_persona_container, Persona, PersonaContainer},
+    data_handler::{
+        data_container::restore,
+        persona::{restore_persona_container, Persona, PersonaContainer},
+        tag::TagContainer,
+    },
     ui::{Ui, UiEvent},
 };
 
@@ -11,11 +15,13 @@ use self::{
 };
 
 const PERSONA_CONTAINER_PATH: &str = "persona.json";
+const TAG_CONTAINER_PATH: &str = "tag.json";
 
 pub struct Controller {
     ui_tx: mpsc::Sender<UiEvent>,
     settings: Settings,
     persona_container: PersonaContainer,
+    tag_container: TagContainer,
     rx: mpsc::Receiver<ControllerSignal>,
     _tx: mpsc::Sender<ControllerSignal>,
 }
@@ -29,10 +35,13 @@ impl Controller {
         let settings = load_settings();
         let persona_container =
             restore_persona_container(PERSONA_CONTAINER_PATH).unwrap_or_default();
+        let tag_container = restore(TAG_CONTAINER_PATH).unwrap_or_default();
+        eprintln!("Start tag container = {:?}", tag_container);
         Self {
             ui_tx: ui_tx.clone(),
             settings,
             persona_container,
+            tag_container,
             rx,
             _tx: tx.clone(),
         }
@@ -114,7 +123,8 @@ impl Controller {
             .unwrap();
     }
 
-    fn select_persona(&self) {
+    fn select_persona(&mut self) {
+        self.persona_container.update_keys();
         self.ui_tx
             .send(UiEvent::SelectPersonaForm(
                 self.persona_container.all_persona().collect(),
@@ -127,8 +137,8 @@ impl Controller {
     }
 
     fn finalize(&mut self) -> bool {
-        self.persona_container
-            .finalize_persona_container(PERSONA_CONTAINER_PATH);
+        self.persona_container.finalize(PERSONA_CONTAINER_PATH);
+        self.tag_container.finalize(TAG_CONTAINER_PATH);
         false
     }
 }

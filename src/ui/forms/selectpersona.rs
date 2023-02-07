@@ -39,10 +39,11 @@ impl SelectPersonaForm {
             self.ui_tx
                 .send(UiEvent::EditPersonaForm(selected_persona))
                 .unwrap();
+            dismiss()
         } else {
             self.no_selection_info("редактирования");
+            EventResult::consumed()
         }
-        EventResult::consumed()
     }
 
     fn event_remove(&self) -> EventResult {

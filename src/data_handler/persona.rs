@@ -83,6 +83,24 @@ impl PersonaContainer {
         self.container.values().cloned()
     }
 
+    pub fn update_keys(&mut self) {
+        let mut need_to_update = vec![];
+        let mut need_to_remove = vec![];
+        for key in self.container.keys() {
+            let persona = self.container[key].clone();
+            if key != &persona.read().unwrap().identity() {
+                need_to_update.push(persona);
+                need_to_remove.push(key.to_owned());
+            }
+        }
+        for key in need_to_remove {
+            self.container.remove(&key).unwrap();
+        }
+        for persona in need_to_update {
+            self.update_persona(persona);
+        }
+    }
+
     pub fn update_persona(&mut self, persona: Persona) {
         let key = persona.read().unwrap().identity();
         self.container
@@ -95,7 +113,7 @@ impl PersonaContainer {
         self.container.remove(&persona.read().unwrap().identity());
     }
 
-    pub fn finalize_persona_container(&self, path: impl AsRef<Path>) {
+    pub fn finalize(&self, path: impl AsRef<Path>) {
         if let Ok(mut file) = fs::File::create(path) {
             write!(file, "{}", self.to_json()).unwrap()
         };

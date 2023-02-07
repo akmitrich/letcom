@@ -80,9 +80,8 @@ impl LetterForm {
         get_area_from(&self.view, n)
     }
 
-    fn update_attachments(&mut self) {
-        let text = self
-            .view
+    fn get_attachment_view(&mut self) -> &mut TextView {
+        self.view
             .get_content_mut()
             .downcast_mut::<ScrollView<LinearLayout>>()
             .unwrap()
@@ -90,8 +89,12 @@ impl LetterForm {
             .get_child_mut(2)
             .unwrap()
             .downcast_mut::<TextView>()
-            .unwrap();
-        text.set_content(self.letter.read().unwrap().attachment_info());
+            .unwrap()
+    }
+
+    fn update_attachments(&mut self) {
+        let info = self.letter.read().unwrap().attachment_info();
+        self.get_attachment_view().set_content(info);
     }
 
     fn save_letter(&mut self) {
