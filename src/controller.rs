@@ -5,6 +5,7 @@ use crate::{
         data_container::restore,
         persona::{restore_persona_container, Persona, PersonaContainer},
         tag::TagContainer,
+        Represent,
     },
     ui::{Ui, UiEvent},
 };
@@ -113,27 +114,27 @@ impl Controller {
     fn import_persona(&mut self, persona: Vec<Persona>) {
         let count = persona.len();
         for persona in persona {
-            self.persona_container.update_persona(persona);
+            let identity = persona.read().unwrap().identity();
+            self.persona_container.update(identity, persona);
         }
         self.ui_tx
             .send(UiEvent::PresentInfo(format!(
                 "Импортировано {count} персон. Теперь у нас {} персон.",
-                self.persona_container.len()
+                self.persona_container.size()
             )))
             .unwrap();
     }
 
     fn select_persona(&mut self) {
-        self.persona_container.update_keys();
         self.ui_tx
             .send(UiEvent::SelectPersonaForm(
-                self.persona_container.all_persona().collect(),
+                self.persona_container.all_representations().collect(),
             ))
             .unwrap();
     }
 
     fn remove_persona(&mut self, persona: Persona) {
-        self.persona_container.remove(persona);
+        self.persona_container.remove_representation(persona);
     }
 
     fn finalize(&mut self) -> bool {

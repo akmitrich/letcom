@@ -1,14 +1,15 @@
 use std::{
-    collections::BTreeMap,
     fs,
-    io::Write,
     path::Path,
     sync::{Arc, RwLock},
 };
 
 use serde::{Deserialize, Serialize};
 
+use super::{data_container::DataContainer, Represent};
+
 pub type Persona = Arc<RwLock<PersonaRepr>>;
+pub type PersonaContainer = DataContainer<PersonaRepr>;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PersonaRepr {
@@ -26,10 +27,6 @@ impl PersonaRepr {
             surname: surname.into(),
             email: email.into(),
         }
-    }
-
-    pub fn identity(&self) -> String {
-        format!("{} {} {}", self.family, self.name, self.surname)
     }
 
     pub fn get_family(&self) -> &str {
@@ -65,73 +62,9 @@ impl PersonaRepr {
     }
 }
 
-#[derive(Debug, Default)]
-pub struct PersonaContainer {
-    container: BTreeMap<String, Persona>,
-}
-
-impl PersonaContainer {
-    pub fn len(&self) -> usize {
-        self.container.len()
-    }
-
-    pub fn all_identities(&self) -> Vec<&String> {
-        self.container.keys().collect()
-    }
-
-    pub fn all_persona(&self) -> impl Iterator<Item = Persona> + '_ {
-        self.container.values().cloned()
-    }
-
-    pub fn update_keys(&mut self) {
-        let mut need_to_update = vec![];
-        let mut need_to_remove = vec![];
-        for key in self.container.keys() {
-            let persona = self.container[key].clone();
-            if key != &persona.read().unwrap().identity() {
-                need_to_update.push(persona);
-                need_to_remove.push(key.to_owned());
-            }
-        }
-        for key in need_to_remove {
-            self.container.remove(&key).unwrap();
-        }
-        for persona in need_to_update {
-            self.update_persona(persona);
-        }
-    }
-
-    pub fn update_persona(&mut self, persona: Persona) {
-        let key = persona.read().unwrap().identity();
-        self.container
-            .entry(key)
-            .and_modify(|old_persona| *old_persona = Arc::clone(&persona))
-            .or_insert(persona);
-    }
-
-    pub fn remove(&mut self, persona: Persona) {
-        self.container.remove(&persona.read().unwrap().identity());
-    }
-
-    pub fn finalize(&self, path: impl AsRef<Path>) {
-        if let Ok(mut file) = fs::File::create(path) {
-            write!(file, "{}", self.to_json()).unwrap()
-        };
-    }
-
-    pub fn from_json(json: &str) -> Option<Self> {
-        let persona: Vec<Persona> = serde_json::from_str(json).ok()?;
-        Some(Self {
-            container: persona
-                .into_iter()
-                .map(|person| (person.clone().read().unwrap().identity(), person))
-                .collect(),
-        })
-    }
-
-    pub fn to_json(&self) -> String {
-        let persona = self.container.values().collect::<Vec<_>>();
-        serde_json::to_string(&persona).unwrap()
+impl Represent for PersonaRepr {
+    fn identity(&self) -> String {
+        format!("{} {} {}", self.family, self.name, self.surname)
     }
 }
 

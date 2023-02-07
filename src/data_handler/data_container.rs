@@ -21,6 +21,14 @@ impl<Repr> DataContainer<Repr> {
             container: BTreeMap::new(),
         }
     }
+
+    pub fn size(&self) -> usize {
+        self.container.len()
+    }
+
+    pub fn all_representations(&self) -> impl Iterator<Item = Arc<RwLock<Repr>>> + '_ {
+        self.container.values().cloned()
+    }
 }
 
 impl<Repr> Default for DataContainer<Repr> {

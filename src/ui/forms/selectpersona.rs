@@ -8,7 +8,7 @@ use cursive::{
 };
 
 use crate::{
-    data_handler::persona::Persona,
+    data_handler::{persona::Persona, Represent},
     ui::{utils::dismiss, UiEvent},
 };
 

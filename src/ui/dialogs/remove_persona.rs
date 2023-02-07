@@ -5,7 +5,10 @@ use cursive::{
     View,
 };
 
-use crate::{controller::ControllerSignal, data_handler::persona::Persona};
+use crate::{
+    controller::ControllerSignal,
+    data_handler::{persona::Persona, Represent},
+};
 
 pub fn remove_persona_dialog(
     persona: Persona,

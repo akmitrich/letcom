@@ -6,7 +6,7 @@ use cursive::{
 };
 
 use crate::{
-    data_handler::persona::Persona,
+    data_handler::{persona::Persona, Represent},
     ui::utils::{dismiss, get_area_from, text_entry_full_width},
 };
 
