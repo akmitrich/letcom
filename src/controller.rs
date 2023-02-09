@@ -86,7 +86,7 @@ impl Controller {
     }
 
     fn save_settings(&self) {
-        self.settings.read().unwrap().save();
+        self.settings.borrow().save();
     }
 
     fn new_letter(&mut self) {
@@ -104,9 +104,9 @@ impl Controller {
             .send(ControllerSignal::Log(format!(
                 "To: {:?}\n{:?}\n{:?}\n{:?}",
                 to,
-                letter.read().unwrap().topic,
-                letter.read().unwrap().text,
-                letter.read().unwrap().attachment_info()
+                letter.borrow().topic,
+                letter.borrow().text,
+                letter.borrow().attachment_info()
             )))
             .unwrap();
     }

@@ -1,11 +1,8 @@
-use std::{
-    collections::BTreeMap,
-    sync::{Arc, RwLock},
-};
+use std::{cell::RefCell, collections::BTreeMap, rc::Rc};
 
 use lettre::message::SinglePart;
 
-pub type Letter = Arc<RwLock<LetterRepr>>;
+pub type Letter = Rc<RefCell<LetterRepr>>;
 
 #[derive(Debug)]
 pub struct LetterRepr {
@@ -37,5 +34,5 @@ impl LetterRepr {
 }
 
 pub fn create_new_letter() -> Letter {
-    Arc::new(RwLock::new(LetterRepr::new()))
+    Rc::new(RefCell::new(LetterRepr::new()))
 }

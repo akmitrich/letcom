@@ -73,12 +73,16 @@ impl SelectPersonaForm {
     }
 
     fn get_selected_persona(&self) -> Option<Persona> {
-        let view = self
-            .view
+        self.get_select_view()
+            .selection()
+            .map(|p| p.as_ref().clone())
+    }
+
+    fn get_select_view(&self) -> &SelectView<Persona> {
+        self.view
             .get_content()
             .downcast_ref::<SelectView<Persona>>()
-            .unwrap();
-        view.selection().map(|p| p.as_ref().clone())
+            .unwrap()
     }
 }
 

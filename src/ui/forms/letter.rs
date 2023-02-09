@@ -47,8 +47,7 @@ impl LetterForm {
                 let attachment = Attachment::new(filename.to_owned()).body(filebody, content_type);
                 let size = attachment.raw_body().len();
                 self.letter
-                    .write()
-                    .unwrap()
+                    .borrow_mut()
                     .attachment
                     .insert(filename.to_owned(), attachment);
                 self.controller_tx
@@ -89,15 +88,16 @@ impl LetterForm {
     }
 
     fn update_attachments(&mut self) {
-        let info = self.letter.read().unwrap().attachment_info();
+        let info = self.letter.borrow().attachment_info();
         self.get_attachment_view().set_content(info);
     }
 
     fn save_letter(&mut self) {
         let topic = self.get_area(0).get_content().to_string();
         let text = self.get_area(1).get_content().to_string();
-        self.letter.write().unwrap().topic = topic;
-        self.letter.write().unwrap().text = text;
+        let mut letter = self.letter.borrow_mut();
+        letter.topic = topic;
+        letter.text = text;
     }
 
     fn event_submit(&mut self) -> EventResult {
@@ -189,14 +189,9 @@ fn init_dialog(letter: &Letter) -> Dialog {
 }
 
 fn init_form(letter: &Letter) -> impl View {
+    let letter = letter.as_ref().borrow();
     LinearLayout::vertical()
-        .child(text_entry_full_width(
-            "     Тема:",
-            &letter.read().unwrap().topic,
-        ))
-        .child(text_entry_full_width(
-            "Сообщение:",
-            &letter.read().unwrap().text,
-        ))
+        .child(text_entry_full_width("     Тема:", &letter.topic))
+        .child(text_entry_full_width("Сообщение:", &letter.text))
         .child(TextView::new("Вложения"))
 }

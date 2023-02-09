@@ -16,6 +16,11 @@ pub struct EditPersonaForm {
 }
 
 impl EditPersonaForm {
+    const FAMILY_INDEX: usize = 0;
+    const NAME_INDEX: usize = 1;
+    const SURNAME_INDEX: usize = 2;
+    const EMAIL_INDEX: usize = 3;
+
     pub fn new(persona: Persona) -> Self {
         Self {
             view: init_dialog(&persona),
@@ -32,10 +37,10 @@ impl EditPersonaForm {
     }
 
     fn event_ok(&self) -> EventResult {
-        let family = self.get_area(0).get_content().to_string();
-        let name = self.get_area(1).get_content().to_string();
-        let surname = self.get_area(2).get_content().to_string();
-        let email = self.get_area(3).get_content().to_string();
+        let family = self.get_area(Self::FAMILY_INDEX).get_content().to_string();
+        let name = self.get_area(Self::NAME_INDEX).get_content().to_string();
+        let surname = self.get_area(Self::SURNAME_INDEX).get_content().to_string();
+        let email = self.get_area(Self::EMAIL_INDEX).get_content().to_string();
         let mut persona = self.persona.borrow_mut();
         persona.set_family(family);
         persona.set_name(name);
@@ -49,8 +54,8 @@ impl EditPersonaForm {
         dismiss()
     }
 
-    fn get_area(&self, n: usize) -> &TextArea {
-        get_area_from(&self.view, n)
+    fn get_area(&self, entry_index: usize) -> &TextArea {
+        get_area_from(&self.view, entry_index)
     }
 }
 

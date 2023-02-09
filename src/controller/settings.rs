@@ -1,9 +1,6 @@
-use std::{
-    env, fs,
-    sync::{Arc, RwLock},
-};
+use std::{cell::RefCell, env, fs, rc::Rc};
 
-pub type Settings = Arc<RwLock<SettingsRepr>>;
+pub type Settings = Rc<RefCell<SettingsRepr>>;
 
 #[derive(Debug)]
 pub struct SettingsRepr {
@@ -74,5 +71,5 @@ pub fn load_settings() -> Settings {
         letter_signature: env::var(SettingsRepr::LETTER_SIGNATURE)
             .unwrap_or_else(|_| "С уважением,\nАлександр Калашников.".into()),
     };
-    Arc::new(RwLock::new(result))
+    Rc::new(RefCell::new(result))
 }

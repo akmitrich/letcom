@@ -61,15 +61,16 @@ impl SendLetterForm {
     fn update_letter(&mut self) {
         let topic = self.get_letter_area(0).get_content().to_string();
         let text = self.get_letter_area(1).get_content().to_string();
-        self.letter.write().unwrap().topic = topic;
-        self.letter.write().unwrap().text = text;
+        let mut letter = self.letter.borrow_mut();
+        letter.topic = topic;
+        letter.text = text;
     }
 
     fn get_chosen_addresses(&self) -> Vec<String> {
         let mut chosen = vec![];
         let list_view = self.get_list_view();
-        for c in list_view.children() {
-            if let ListChild::Row(label, check) = c {
+        for list_entry in list_view.children() {
+            if let ListChild::Row(label, check) = list_entry {
                 if let Some(check) = check.downcast_ref::<Checkbox>() {
                     if check.is_checked() {
                         chosen.push(label.to_owned());
@@ -104,12 +105,12 @@ impl SendLetterForm {
             .get_inner()
     }
 
-    fn get_panel(&self, n: usize) -> &dyn View {
+    fn get_panel(&self, panel_index: usize) -> &dyn View {
         self.view
             .get_content()
             .downcast_ref::<LinearLayout>()
             .unwrap()
-            .get_child(n)
+            .get_child(panel_index)
             .unwrap()
     }
 }
@@ -172,15 +173,10 @@ fn init_address_panel(addresses: &[String]) -> impl View {
 }
 
 fn init_letter_panel(letter: &Letter) -> impl View {
+    let letter = letter.as_ref().borrow();
     LinearLayout::vertical()
-        .child(text_entry_full_width(
-            " Тема:",
-            &letter.read().unwrap().topic,
-        ))
-        .child(text_entry_full_width(
-            "Текст:",
-            &letter.read().unwrap().text,
-        ))
-        .child(TextView::new(letter.read().unwrap().attachment_info()))
+        .child(text_entry_full_width(" Тема:", &letter.topic))
+        .child(text_entry_full_width("Текст:", &letter.text))
+        .child(TextView::new(letter.attachment_info()))
         .scrollable()
 }

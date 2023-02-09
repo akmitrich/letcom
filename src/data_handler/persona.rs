@@ -2,7 +2,7 @@ use std::{cell::RefCell, fs, path::Path, rc::Rc};
 
 use serde::{Deserialize, Serialize};
 
-use super::{data_container::DataContainer, Represent};
+use super::{data_container::DataContainer, Identity, Represent};
 
 pub type Persona = Rc<RefCell<PersonaRepr>>; //Arc<RwLock<PersonaRepr>>;
 pub type PersonaContainer = DataContainer<PersonaRepr>;
@@ -59,7 +59,7 @@ impl PersonaRepr {
 }
 
 impl Represent for PersonaRepr {
-    fn identity(&self) -> String {
+    fn identity(&self) -> Identity {
         format!("{} {} {}", self.family, self.name, self.surname)
     }
 }

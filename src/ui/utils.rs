@@ -17,17 +17,18 @@ pub fn dismiss() -> EventResult {
     })
 }
 
-pub fn get_area_from(dialog: &Dialog, n: usize) -> &TextArea {
+pub fn get_area_from(dialog: &Dialog, entry_index: usize) -> &TextArea {
+    const TEXT_AREA_IN_ENTRY: usize = 2;
     dialog
         .get_content()
         .downcast_ref::<ScrollView<LinearLayout>>()
         .unwrap()
         .get_inner()
-        .get_child(n)
+        .get_child(entry_index)
         .unwrap()
         .downcast_ref::<LinearLayout>()
         .unwrap()
-        .get_child(2)
+        .get_child(TEXT_AREA_IN_ENTRY)
         .unwrap()
         .downcast_ref::<ResizedView<TextArea>>()
         .unwrap()
