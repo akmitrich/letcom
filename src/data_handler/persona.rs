@@ -1,14 +1,10 @@
-use std::{
-    fs,
-    path::Path,
-    sync::{Arc, RwLock},
-};
+use std::{cell::RefCell, fs, path::Path, rc::Rc};
 
 use serde::{Deserialize, Serialize};
 
 use super::{data_container::DataContainer, Represent};
 
-pub type Persona = Arc<RwLock<PersonaRepr>>;
+pub type Persona = Rc<RefCell<PersonaRepr>>; //Arc<RwLock<PersonaRepr>>;
 pub type PersonaContainer = DataContainer<PersonaRepr>;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -69,7 +65,7 @@ impl Represent for PersonaRepr {
 }
 
 pub fn new_persona() -> Persona {
-    Arc::new(RwLock::new(PersonaRepr::new("", "", "", "")))
+    Rc::new(RefCell::new(PersonaRepr::new("", "", "", "")))
 }
 
 pub fn import_persona(data: &str) -> Option<Persona> {
@@ -86,7 +82,7 @@ pub fn import_persona(data: &str) -> Option<Persona> {
     const _EMAIL2: usize = 16;
     const _EMAIL3: usize = 17;
     let data = data.split('\t').collect::<Vec<_>>();
-    Some(Arc::new(RwLock::new(PersonaRepr::new(
+    Some(Rc::new(RefCell::new(PersonaRepr::new(
         data.get(FAMILY)?.trim(),
         data.get(NAME)?.trim(),
         data.get(SURNAME)?.trim(),

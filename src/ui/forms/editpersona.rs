@@ -36,7 +36,7 @@ impl EditPersonaForm {
         let name = self.get_area(1).get_content().to_string();
         let surname = self.get_area(2).get_content().to_string();
         let email = self.get_area(3).get_content().to_string();
-        let mut persona = self.persona.write().unwrap();
+        let mut persona = self.persona.borrow_mut();
         persona.set_family(family);
         persona.set_name(name);
         persona.set_surname(surname);
@@ -93,7 +93,7 @@ fn init_dialog(persona: &Persona) -> Dialog {
     Dialog::around(init_view(persona))
         .title(format!(
             "Редактируем {}",
-            persona.read().unwrap().identity()
+            persona.as_ref().borrow().identity()
         ))
         .button("Ok", |_| {})
         .button("Cancel", |_| {})
@@ -103,19 +103,19 @@ fn init_view(persona: &Persona) -> impl View {
     LinearLayout::vertical()
         .child(text_entry_full_width(
             "Фамилия:",
-            persona.read().unwrap().get_family(),
+            persona.as_ref().borrow().get_family(),
         ))
         .child(text_entry_full_width(
             "Имя:",
-            persona.read().unwrap().get_name(),
+            persona.as_ref().borrow().get_name(),
         ))
         .child(text_entry_full_width(
             "Отчество:",
-            persona.read().unwrap().get_surname(),
+            persona.as_ref().borrow().get_surname(),
         ))
         .child(text_entry_full_width(
             "E-mail:",
-            persona.read().unwrap().get_email(),
+            persona.as_ref().borrow().get_email(),
         ))
         .scrollable()
 }

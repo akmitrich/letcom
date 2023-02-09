@@ -114,7 +114,7 @@ impl Controller {
     fn import_persona(&mut self, persona: Vec<Persona>) {
         let count = persona.len();
         for persona in persona {
-            let identity = persona.read().unwrap().identity();
+            let identity = persona.borrow().identity();
             self.persona_container.update(identity, persona);
         }
         self.tx

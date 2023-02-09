@@ -1,11 +1,11 @@
-use std::sync::{Arc, RwLock};
+use std::{cell::RefCell, rc::Rc};
 
 use serde::{Deserialize, Serialize};
 
 use super::{data_container::DataContainer, persona::Persona, Represent};
 
 pub type TagContainer = DataContainer<TagRepr>;
-pub type Tag = Arc<RwLock<TagRepr>>;
+pub type Tag = Rc<RefCell<TagRepr>>;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TagRepr {
     label: String,
@@ -28,5 +28,5 @@ impl Represent for TagRepr {
 }
 
 pub fn new_tag(label: impl ToString) -> Tag {
-    Arc::new(RwLock::new(TagRepr::new(label)))
+    Rc::new(RefCell::new(TagRepr::new(label)))
 }

@@ -1,10 +1,4 @@
-use std::{
-    collections::BTreeMap,
-    fs,
-    io::Write,
-    path::Path,
-    sync::{Arc, RwLock},
-};
+use std::{cell::RefCell, collections::BTreeMap, fs, io::Write, path::Path, rc::Rc};
 
 use serde::{de::DeserializeOwned, Serialize};
 
@@ -12,7 +6,7 @@ use super::Represent;
 
 #[derive(Debug)]
 pub struct DataContainer<Repr> {
-    container: BTreeMap<String, Arc<RwLock<Repr>>>,
+    container: BTreeMap<String, Rc<RefCell<Repr>>>,
 }
 
 impl<Repr> DataContainer<Repr> {
@@ -26,7 +20,7 @@ impl<Repr> DataContainer<Repr> {
         self.container.len()
     }
 
-    pub fn all_representations(&self) -> impl Iterator<Item = Arc<RwLock<Repr>>> + '_ {
+    pub fn all_representations(&self) -> impl Iterator<Item = Rc<RefCell<Repr>>> + '_ {
         self.container.values().cloned()
     }
 }
@@ -38,24 +32,24 @@ impl<Repr> Default for DataContainer<Repr> {
 }
 
 impl<Repr: Represent> DataContainer<Repr> {
-    pub fn update(&mut self, identity: impl AsRef<str>, repr: Arc<RwLock<Repr>>) {
+    pub fn update(&mut self, identity: impl AsRef<str>, repr: Rc<RefCell<Repr>>) {
         let key = identity.as_ref();
-        let repr_id = repr.read().unwrap().identity();
+        let repr_id = repr.borrow().identity();
         if repr_id != key {
             self.container.remove(key);
         }
         self.container
             .entry(repr_id)
-            .and_modify(|old| *old = Arc::clone(&repr))
+            .and_modify(|old| *old = Rc::clone(&repr))
             .or_insert(repr);
     }
 
-    pub fn remove_identity(&mut self, identity: impl AsRef<str>) -> Option<Arc<RwLock<Repr>>> {
+    pub fn remove_identity(&mut self, identity: impl AsRef<str>) -> Option<Rc<RefCell<Repr>>> {
         self.container.remove(identity.as_ref())
     }
 
-    pub fn remove_representation(&mut self, repr: Arc<RwLock<Repr>>) -> Option<Arc<RwLock<Repr>>> {
-        self.remove_identity(repr.read().unwrap().identity())
+    pub fn remove_representation(&mut self, repr: Rc<RefCell<Repr>>) -> Option<Rc<RefCell<Repr>>> {
+        self.remove_identity(repr.borrow().identity())
     }
 }
 
@@ -73,11 +67,11 @@ impl<Repr: Serialize> DataContainer<Repr> {
 
 impl<Repr: DeserializeOwned + Represent> DataContainer<Repr> {
     pub fn from_json(json: impl AsRef<str>) -> Option<Self> {
-        let data: Vec<Arc<RwLock<Repr>>> = serde_json::from_str(json.as_ref()).ok()?;
+        let data: Vec<Rc<RefCell<Repr>>> = serde_json::from_str(json.as_ref()).ok()?;
         Some(Self {
             container: data
                 .into_iter()
-                .map(|x| (x.read().unwrap().identity(), Arc::clone(&x)))
+                .map(|x| (x.borrow().identity(), Rc::clone(&x)))
                 .collect(),
         })
     }

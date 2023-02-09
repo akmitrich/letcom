@@ -128,7 +128,7 @@ fn init_view(persona: Vec<Persona>) -> impl View {
     let mut select = SelectView::new().popup();
     select.set_autojump(true);
     for p in persona {
-        let label = p.read().unwrap().identity();
+        let label = p.borrow().identity();
         select.add_item(label, p);
     }
     select

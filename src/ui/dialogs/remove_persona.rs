@@ -17,9 +17,9 @@ pub fn remove_persona_dialog(
     let tx = controller_tx.clone();
     Dialog::around(TextView::new(format!(
         "Вы уверены, что хотите удалить\n{:?}?",
-        persona.read().unwrap().identity()
+        persona.as_ref().borrow().identity()
     )))
-    .title(format!("Удаляем {}", persona.read().unwrap().identity()))
+    .title(format!("Удаляем {}", persona.as_ref().borrow().identity()))
     .button("Yes", move |c| {
         tx.send(ControllerSignal::RemovePersona(persona.clone()))
             .unwrap();
