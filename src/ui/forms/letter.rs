@@ -12,7 +12,7 @@ use crate::{
     controller::{letter::Letter, ControllerSignal},
     ui::{
         dialogs::{open_file::OpenFileDialog, SetData},
-        utils::{dismiss, get_area_from, text_entry_full_width},
+        utils::{dismiss, get_area_from, linear_layout_form},
     },
 };
 
@@ -136,10 +136,8 @@ impl LetterForm {
 }
 
 impl SetData for LetterForm {
-    fn set_data(&mut self, data: impl Iterator<Item = String>) {
-        for x in data {
-            self.set_filename(&x);
-        }
+    fn set_data(&mut self, data: String) {
+        self.set_filename(&data)
     }
 }
 
@@ -190,8 +188,8 @@ fn init_dialog(letter: &Letter) -> Dialog {
 
 fn init_form(letter: &Letter) -> impl View {
     let letter = letter.as_ref().borrow();
-    LinearLayout::vertical()
-        .child(text_entry_full_width("     Тема:", &letter.topic))
-        .child(text_entry_full_width("Сообщение:", &letter.text))
-        .child(TextView::new("Вложения"))
+    linear_layout_form(vec![
+        ("     Тема:", &letter.topic),
+        ("Сообщение:", &letter.text),
+    ])
 }

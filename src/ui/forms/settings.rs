@@ -2,14 +2,14 @@ use std::sync::mpsc;
 
 use cursive::{
     event::{Event, EventResult, Key, MouseButton, MouseEvent},
-    view::{Scrollable, ViewWrapper},
+    view::ViewWrapper,
     views::{Dialog, DialogFocus, LinearLayout, ResizedView, ScrollView, TextArea},
     wrap_impl, View,
 };
 
 use crate::{
     controller::{settings::Settings, ControllerSignal},
-    ui::utils::{dismiss, text_entry_full_width},
+    ui::utils::{dismiss, linear_layout_form},
 };
 
 pub struct SettingsForm {
@@ -157,25 +157,13 @@ fn init_dialog(settings: &Settings) -> Dialog {
 
 fn init_form(settings: &Settings) -> impl View {
     let settings = settings.as_ref().borrow();
-    LinearLayout::vertical()
-        .child(text_entry_full_width("SMTP-сервер:", &settings.smtp_relay))
-        .child(text_entry_full_width(
-            "SMTP-пользователь:",
-            &settings.smtp_user,
-        ))
-        .child(text_entry_full_width(
-            "SMTP-пароль:",
-            &settings.smtp_password,
-        ))
-        .child(text_entry_full_width("Отправитель:", &settings.letter_from))
-        .child(text_entry_full_width("Обращение:", &settings.plural_title))
-        .child(text_entry_full_width(
-            "Приветствие:",
-            &settings.single_greet,
-        ))
-        .child(text_entry_full_width(
-            "Подпись:",
-            &settings.letter_signature,
-        ))
-        .scrollable()
+    linear_layout_form(vec![
+        ("SMTP-сервер:", &settings.smtp_relay),
+        ("SMTP-пользователь:", &settings.smtp_user),
+        ("SMTP-пароль:", &settings.smtp_password),
+        ("Отправитель:", &settings.letter_from),
+        ("Обращение:", &settings.plural_title),
+        ("Приветствие:", &settings.single_greet),
+        ("Подпись:", &settings.letter_signature),
+    ])
 }

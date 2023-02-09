@@ -1,3 +1,4 @@
+pub mod attached_file;
 pub mod data_container;
 pub mod persona;
 pub mod tag;

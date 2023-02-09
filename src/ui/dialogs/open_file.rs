@@ -3,11 +3,11 @@ use std::marker::PhantomData;
 use cursive::{
     event::{Event, EventResult, Key, MouseButton, MouseEvent},
     view::{Scrollable, ViewWrapper},
-    views::{Dialog, DialogFocus, LinearLayout, ResizedView, ScrollView, TextArea},
+    views::{Dialog, DialogFocus},
     wrap_impl, View,
 };
 
-use crate::ui::utils::{dismiss, text_entry_full_width};
+use crate::ui::utils::{dismiss, get_area_from, linear_layout_form};
 
 use super::SetData;
 
@@ -31,12 +31,12 @@ impl<P: SetData + ViewWrapper> OpenFileDialog<P> {
     fn button_event(&mut self, button: usize) -> EventResult {
         match button {
             0 => {
-                let filename = self.get_filenames().collect::<Vec<_>>();
+                let filename = self.get_filename();
                 let parent_name = self.parent_name;
                 EventResult::with_cb_once(move |c| {
                     let parent_name = parent_name.to_string();
                     if let Some(mut parent) = c.find_name::<P>(&parent_name) {
-                        parent.set_data(filename.into_iter());
+                        parent.set_data(filename);
                     } else {
                         panic!("Unable to find parent window");
                     }
@@ -50,21 +50,8 @@ impl<P: SetData + ViewWrapper> OpenFileDialog<P> {
 }
 
 impl<P> OpenFileDialog<P> {
-    fn get_filenames(&self) -> impl Iterator<Item = String> + '_ {
-        [self
-            .view
-            .get_content()
-            .downcast_ref::<ScrollView<LinearLayout>>()
-            .unwrap()
-            .get_inner()
-            .get_child(2)
-            .unwrap()
-            .downcast_ref::<ResizedView<TextArea>>()
-            .unwrap()
-            .get_inner()
-            .get_content()
-            .to_string()]
-        .into_iter()
+    fn get_filename(&self) -> String {
+        get_area_from(&self.view, 0).get_content().to_string()
     }
 }
 
@@ -111,5 +98,5 @@ fn init_dialog() -> Dialog {
 }
 
 fn create_view() -> impl View {
-    text_entry_full_width("Имя файла:", "Cargo.toml")
+    linear_layout_form(vec![("Имя файла:", "Cargo.toml")])
 }

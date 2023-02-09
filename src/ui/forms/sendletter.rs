@@ -2,17 +2,17 @@ use std::sync::mpsc;
 
 use cursive::{
     event::{Event, EventResult, Key, MouseButton, MouseEvent},
-    view::{Scrollable, ViewWrapper},
+    view::ViewWrapper,
     views::{
         Checkbox, Dialog, DialogFocus, LinearLayout, ListChild, ListView, Panel, ResizedView,
-        ScrollView, TextArea, TextView,
+        ScrollView, TextArea,
     },
     wrap_impl, View,
 };
 
 use crate::{
     controller::{letter::Letter, ControllerSignal},
-    ui::utils::{dismiss, text_entry_full_width},
+    ui::utils::{dismiss, linear_layout_form},
 };
 
 pub struct SendLetterForm {
@@ -174,9 +174,5 @@ fn init_address_panel(addresses: &[String]) -> impl View {
 
 fn init_letter_panel(letter: &Letter) -> impl View {
     let letter = letter.as_ref().borrow();
-    LinearLayout::vertical()
-        .child(text_entry_full_width(" Тема:", &letter.topic))
-        .child(text_entry_full_width("Текст:", &letter.text))
-        .child(TextView::new(letter.attachment_info()))
-        .scrollable()
+    linear_layout_form(vec![(" Тема:", &letter.topic), ("Текст:", &letter.text)])
 }

@@ -1,13 +1,13 @@
 use cursive::{
     event::{Event, EventResult, Key, MouseButton, MouseEvent},
-    view::{Scrollable, ViewWrapper},
-    views::{Dialog, DialogFocus, LinearLayout, TextArea},
+    view::ViewWrapper,
+    views::{Dialog, DialogFocus, TextArea},
     wrap_impl, View,
 };
 
 use crate::{
     data_handler::{persona::Persona, Represent},
-    ui::utils::{dismiss, get_area_from, text_entry_full_width},
+    ui::utils::{dismiss, get_area_from, linear_layout_form},
 };
 
 pub struct EditPersonaForm {
@@ -105,22 +105,11 @@ fn init_dialog(persona: &Persona) -> Dialog {
 }
 
 fn init_view(persona: &Persona) -> impl View {
-    LinearLayout::vertical()
-        .child(text_entry_full_width(
-            "Фамилия:",
-            persona.as_ref().borrow().get_family(),
-        ))
-        .child(text_entry_full_width(
-            "Имя:",
-            persona.as_ref().borrow().get_name(),
-        ))
-        .child(text_entry_full_width(
-            "Отчество:",
-            persona.as_ref().borrow().get_surname(),
-        ))
-        .child(text_entry_full_width(
-            "E-mail:",
-            persona.as_ref().borrow().get_email(),
-        ))
-        .scrollable()
+    let persona = persona.as_ref().borrow();
+    linear_layout_form(vec![
+        (" Фамилия:", persona.get_family()),
+        ("     Имя:", persona.get_name()),
+        ("Отчество:", persona.get_surname()),
+        ("  E-mail:", persona.get_email()),
+    ])
 }
