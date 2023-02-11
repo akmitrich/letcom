@@ -7,7 +7,7 @@ use cursive::{
 
 use crate::{
     data_handler::{persona::Persona, Represent},
-    ui::utils::{dismiss, get_area_from, linear_layout_form},
+    ui::utils::{dismiss, form_view, get_area_from},
 };
 
 pub struct EditPersonaForm {
@@ -106,7 +106,7 @@ fn init_dialog(persona: &Persona) -> Dialog {
 
 fn init_view(persona: &Persona) -> impl View {
     let persona = persona.as_ref().borrow();
-    linear_layout_form(vec![
+    form_view(vec![
         (" Фамилия:", persona.get_family()),
         ("     Имя:", persona.get_name()),
         ("Отчество:", persona.get_surname()),

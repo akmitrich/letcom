@@ -8,8 +8,8 @@ use cursive::{
 };
 
 use crate::{
-    controller::{letter::Letter, settings::Settings, ControllerSignal},
-    data_handler::persona::Persona,
+    controller::{settings::Settings, ControllerSignal},
+    data_handler::{letter::Letter, persona::Persona},
 };
 
 pub struct Ui {

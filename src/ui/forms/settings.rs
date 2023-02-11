@@ -9,7 +9,7 @@ use cursive::{
 
 use crate::{
     controller::{settings::Settings, ControllerSignal},
-    ui::utils::{dismiss, linear_layout_form},
+    ui::utils::{dismiss, form_view},
 };
 
 pub struct SettingsForm {
@@ -157,7 +157,7 @@ fn init_dialog(settings: &Settings) -> Dialog {
 
 fn init_form(settings: &Settings) -> impl View {
     let settings = settings.as_ref().borrow();
-    linear_layout_form(vec![
+    form_view(vec![
         ("SMTP-сервер:", &settings.smtp_relay),
         ("SMTP-пользователь:", &settings.smtp_user),
         ("SMTP-пароль:", &settings.smtp_password),

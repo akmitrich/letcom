@@ -2,12 +2,12 @@ use std::marker::PhantomData;
 
 use cursive::{
     event::{Event, EventResult, Key, MouseButton, MouseEvent},
-    view::{Scrollable, ViewWrapper},
+    view::ViewWrapper,
     views::{Dialog, DialogFocus},
     wrap_impl, View,
 };
 
-use crate::ui::utils::{dismiss, get_area_from, linear_layout_form};
+use crate::ui::utils::{dismiss, form_view, get_area_from};
 
 use super::SetData;
 
@@ -91,12 +91,12 @@ impl<P: ViewWrapper + SetData + 'static> ViewWrapper for OpenFileDialog<P> {
 }
 
 fn init_dialog() -> Dialog {
-    Dialog::around(create_view().scrollable())
+    Dialog::around(create_view())
         .title("Открываем файл")
         .button("Ok", |_| {})
         .button("Cancel", |_| {})
 }
 
 fn create_view() -> impl View {
-    linear_layout_form(vec![("Имя файла:", "Cargo.toml")])
+    form_view(vec![("Имя файла:", "Cargo.toml")])
 }

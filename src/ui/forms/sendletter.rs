@@ -11,8 +11,9 @@ use cursive::{
 };
 
 use crate::{
-    controller::{letter::Letter, ControllerSignal},
-    ui::utils::{dismiss, linear_layout_form},
+    controller::ControllerSignal,
+    data_handler::letter::Letter,
+    ui::utils::{dismiss, form_view},
 };
 
 pub struct SendLetterForm {
@@ -59,11 +60,11 @@ impl SendLetterForm {
     }
 
     fn update_letter(&mut self) {
-        let topic = self.get_letter_area(0).get_content().to_string();
-        let text = self.get_letter_area(1).get_content().to_string();
+        let topic = self.get_letter_area(0).get_content();
+        let text = self.get_letter_area(1).get_content();
         let mut letter = self.letter.borrow_mut();
-        letter.topic = topic;
-        letter.text = text;
+        letter.set_topic(topic);
+        letter.set_text(text);
     }
 
     fn get_chosen_addresses(&self) -> Vec<String> {
@@ -174,5 +175,8 @@ fn init_address_panel(addresses: &[String]) -> impl View {
 
 fn init_letter_panel(letter: &Letter) -> impl View {
     let letter = letter.as_ref().borrow();
-    linear_layout_form(vec![(" Тема:", &letter.topic), ("Текст:", &letter.text)])
+    form_view(vec![
+        (" Тема:", letter.get_topic()),
+        ("Текст:", letter.get_text()),
+    ])
 }

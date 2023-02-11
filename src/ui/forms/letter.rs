@@ -1,4 +1,4 @@
-use std::{fs, sync::mpsc};
+use std::sync::mpsc;
 
 use cursive::{
     event::{Event, EventResult, Key, MouseButton, MouseEvent},
@@ -6,10 +6,10 @@ use cursive::{
     views::{Dialog, DialogFocus, LinearLayout, ScrollView, TextArea, TextView},
     wrap_impl, View,
 };
-use lettre::message::{header::ContentType, Attachment};
 
 use crate::{
-    controller::{letter::Letter, ControllerSignal},
+    controller::ControllerSignal,
+    data_handler::letter::Letter,
     ui::{
         dialogs::{open_file::OpenFileDialog, SetData},
         utils::{dismiss, get_area_from, linear_layout_form},
@@ -41,30 +41,13 @@ impl LetterForm {
 
     pub fn set_filename(&mut self, filename: &str) {
         let filename = filename.trim();
-        match fs::read(filename) {
-            Ok(filebody) => {
-                let content_type = ContentType::parse("application/txt").unwrap();
-                let attachment = Attachment::new(filename.to_owned()).body(filebody, content_type);
-                let size = attachment.raw_body().len();
-                self.letter
-                    .borrow_mut()
-                    .attachment
-                    .insert(filename.to_owned(), attachment);
-                self.controller_tx
-                    .send(ControllerSignal::Log(format!(
-                        "Загружен файл: '{}'\n({} байт)",
-                        filename.to_owned(),
-                        size
-                    )))
-                    .unwrap();
-            }
-            Err(ref read_error) => self
-                .controller_tx
+        if let Err(e) = self.letter.borrow_mut().add_attachment_from_path(filename) {
+            self.controller_tx
                 .send(ControllerSignal::Log(format!(
-                    "Случилось непредвиденное:\n{}",
-                    read_error
+                    "Не удалось присоединить файл: {:?}\nОшибка: {}",
+                    filename, e
                 )))
-                .unwrap(),
+                .unwrap();
         }
         self.update_attachments();
     }
@@ -93,11 +76,11 @@ impl LetterForm {
     }
 
     fn save_letter(&mut self) {
-        let topic = self.get_area(0).get_content().to_string();
-        let text = self.get_area(1).get_content().to_string();
+        let topic = self.get_area(0).get_content();
+        let text = self.get_area(1).get_content();
         let mut letter = self.letter.borrow_mut();
-        letter.topic = topic;
-        letter.text = text;
+        letter.set_topic(topic);
+        letter.set_text(text);
     }
 
     fn event_submit(&mut self) -> EventResult {
@@ -177,7 +160,7 @@ impl ViewWrapper for LetterForm {
 }
 
 fn init_dialog(letter: &Letter) -> Dialog {
-    Dialog::around(init_form(letter).scrollable())
+    Dialog::around(init_form(letter))
         .title("Редактируем письмо")
         .button("OK", |_| {})
         .button("Cancel", |_| {})
@@ -189,7 +172,9 @@ fn init_dialog(letter: &Letter) -> Dialog {
 fn init_form(letter: &Letter) -> impl View {
     let letter = letter.as_ref().borrow();
     linear_layout_form(vec![
-        ("     Тема:", &letter.topic),
-        ("Сообщение:", &letter.text),
+        ("Тема:", letter.get_topic()),
+        ("Сообщение:", letter.get_text()),
     ])
+    .child(TextView::new(letter.attachment_info()))
+    .scrollable()
 }

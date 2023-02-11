@@ -12,12 +12,16 @@ pub fn text_entry_full_width(label: &str, content: &str) -> LinearLayout {
         .child(TextArea::new().content(content).full_width())
 }
 
-pub fn linear_layout_form(entries: Vec<(&str, &str)>) -> impl View {
+pub fn linear_layout_form(entries: Vec<(&str, &str)>) -> LinearLayout {
     let mut layout = LinearLayout::vertical();
     for (label, content) in entries {
         layout.add_child(text_entry_full_width(label, content));
     }
-    layout.scrollable()
+    layout
+}
+
+pub fn form_view(entries: Vec<(&str, &str)>) -> impl View {
+    linear_layout_form(entries).scrollable()
 }
 
 pub fn get_area_from(dialog: &Dialog, entry_index: usize) -> &TextArea {

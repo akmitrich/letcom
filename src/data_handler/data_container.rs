@@ -2,11 +2,11 @@ use std::{cell::RefCell, collections::BTreeMap, fs, io::Write, path::Path, rc::R
 
 use serde::{de::DeserializeOwned, Serialize};
 
-use super::Represent;
+use super::{Identity, Represent};
 
 #[derive(Debug)]
 pub struct DataContainer<Repr> {
-    container: BTreeMap<String, Rc<RefCell<Repr>>>,
+    container: BTreeMap<Identity, Rc<RefCell<Repr>>>,
 }
 
 impl<Repr> DataContainer<Repr> {
@@ -18,6 +18,10 @@ impl<Repr> DataContainer<Repr> {
 
     pub fn size(&self) -> usize {
         self.container.len()
+    }
+
+    pub fn idendities(&self) -> impl Iterator<Item = &Identity> + '_ {
+        self.container.keys()
     }
 
     pub fn all_representations(&self) -> impl Iterator<Item = Rc<RefCell<Repr>>> + '_ {
@@ -32,7 +36,12 @@ impl<Repr> Default for DataContainer<Repr> {
 }
 
 impl<Repr: Represent> DataContainer<Repr> {
-    pub fn update(&mut self, identity: impl AsRef<str>, repr: Rc<RefCell<Repr>>) {
+    pub fn insert_or_update(&mut self, repr: Rc<RefCell<Repr>>) {
+        let repr_id = repr.borrow().identity();
+        self.update_identity(repr_id, repr);
+    }
+
+    pub fn update_identity(&mut self, identity: impl AsRef<str>, repr: Rc<RefCell<Repr>>) {
         let key = identity.as_ref();
         let repr_id = repr.borrow().identity();
         if repr_id != key {

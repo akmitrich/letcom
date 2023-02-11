@@ -3,6 +3,7 @@ use std::sync::mpsc;
 use crate::{
     data_handler::{
         data_container::restore,
+        letter::{new_letter, Letter},
         persona::{restore_persona_container, Persona, PersonaContainer},
         tag::TagContainer,
         Represent,
@@ -10,10 +11,7 @@ use crate::{
     ui::Ui,
 };
 
-use self::{
-    letter::{create_new_letter, Letter},
-    settings::{load_settings, Settings},
-};
+use self::settings::{load_settings, Settings};
 
 const PERSONA_CONTAINER_PATH: &str = "persona.json";
 const TAG_CONTAINER_PATH: &str = "tag.json";
@@ -90,7 +88,7 @@ impl Controller {
     }
 
     fn new_letter(&mut self) {
-        let letter = create_new_letter();
+        let letter = new_letter();
         self.ui.letter_form(letter);
     }
 
@@ -104,9 +102,9 @@ impl Controller {
             .send(ControllerSignal::Log(format!(
                 "To: {:?}\n{:?}\n{:?}\n{:?}",
                 to,
-                letter.borrow().topic,
-                letter.borrow().text,
-                letter.borrow().attachment_info()
+                letter.borrow().get_topic(),
+                letter.borrow().get_text(),
+                "Attacments" // letter.borrow().attachment_info()
             )))
             .unwrap();
     }
@@ -115,7 +113,7 @@ impl Controller {
         let count = persona.len();
         for persona in persona {
             let identity = persona.borrow().identity();
-            self.persona_container.update(identity, persona);
+            self.persona_container.update_identity(identity, persona);
         }
         self.tx
             .send(ControllerSignal::Log(format!(
@@ -166,5 +164,4 @@ pub enum ControllerSignal {
     Quit,
 }
 
-pub mod letter;
 pub mod settings;
