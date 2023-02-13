@@ -2,11 +2,10 @@ use std::sync::mpsc;
 
 use crate::{
     data_handler::{
-        data_container::restore,
+        handler::DataHandler,
         letter::{new_letter, Letter},
         make_ref,
-        persona::{restore_persona_container, Persona, PersonaContainer},
-        tag::TagContainer,
+        persona::Persona,
         Identity, Represent,
     },
     ui::Ui,
@@ -14,14 +13,10 @@ use crate::{
 
 use self::settings::{load_settings, Settings};
 
-const PERSONA_CONTAINER_PATH: &str = "persona.json";
-const TAG_CONTAINER_PATH: &str = "tag.json";
-
 pub struct Controller {
     ui: Ui,
     settings: Settings,
-    persona_container: PersonaContainer,
-    tag_container: TagContainer,
+    data_handler: DataHandler,
     rx: mpsc::Receiver<ControllerSignal>,
     tx: mpsc::Sender<ControllerSignal>,
 }
@@ -31,14 +26,10 @@ impl Controller {
         let (tx, rx) = mpsc::channel();
         let ui = Ui::new(&tx);
         let settings = load_settings();
-        let persona_container =
-            restore_persona_container(PERSONA_CONTAINER_PATH).unwrap_or_default();
-        let tag_container = restore(TAG_CONTAINER_PATH).unwrap_or_default();
         Self {
             ui,
             settings,
-            persona_container,
-            tag_container,
+            data_handler: DataHandler::new(),
             rx,
             tx,
         }
@@ -50,8 +41,11 @@ impl Controller {
         }
     }
 
-    fn get_people(&self) -> Vec<Persona> {
-        self.persona_container.all_representations().collect()
+    fn get_people(&mut self) -> Vec<Persona> {
+        self.data_handler
+            .get_people()
+            .all_representations()
+            .collect()
     }
 }
 
@@ -119,19 +113,23 @@ impl Controller {
     fn import_persona(&mut self, persona: Vec<Persona>) {
         let count = persona.len();
         for persona in persona {
-            self.persona_container.insert_or_update(persona);
+            self.data_handler.get_people_mut().insert_or_update(persona);
         }
         self.tx
             .send(ControllerSignal::Log(format!(
                 "Импортировано {count} персон. Теперь у нас {} персон.",
-                self.persona_container.size()
+                self.data_handler.get_people().size()
             )))
             .unwrap();
     }
 
     fn select_persona(&mut self) {
-        self.ui
-            .select_persona_form(self.persona_container.all_representations().collect())
+        self.ui.select_persona_form(
+            self.data_handler
+                .get_people()
+                .all_representations()
+                .collect(),
+        )
     }
 
     fn edit_persona(&mut self, persona: Persona) {
@@ -140,7 +138,9 @@ impl Controller {
     }
 
     fn complete_edit_persona(&mut self, key: Identity, persona: Persona) {
-        self.persona_container.update_identity(key, persona);
+        self.data_handler
+            .get_people_mut()
+            .update_identity(key, persona);
     }
 
     fn remove_persona_alert(&mut self, persona: Persona) {
@@ -148,12 +148,13 @@ impl Controller {
     }
 
     fn remove_persona(&mut self, persona: Persona) {
-        self.persona_container.remove_representation(persona);
+        self.data_handler
+            .get_people_mut()
+            .remove_representation(persona);
     }
 
     fn finalize(&mut self) -> bool {
-        self.persona_container.finalize(PERSONA_CONTAINER_PATH);
-        self.tag_container.finalize(TAG_CONTAINER_PATH);
+        self.data_handler.finalize();
         false
     }
 }

@@ -1,4 +1,11 @@
-use std::{cell::RefCell, collections::BTreeMap, fs, io::Write, path::Path, rc::Rc};
+use std::{
+    cell::RefCell,
+    collections::BTreeMap,
+    fs,
+    io::{self, Write},
+    path::Path,
+    rc::Rc,
+};
 
 use serde::{de::DeserializeOwned, Serialize};
 
@@ -67,28 +74,27 @@ impl<Repr: Serialize> DataContainer<Repr> {
         serde_json::to_string(&self.container.values().collect::<Vec<_>>()).unwrap()
     }
 
-    pub fn finalize(&self, path: impl AsRef<Path>) {
-        if let Ok(mut file) = fs::File::create(path) {
-            write!(file, "{}", self.to_json()).unwrap_or_default();
-        }
+    pub fn finalize(&self, path: impl AsRef<Path>) -> io::Result<()> {
+        let mut file = fs::File::create(path)?;
+        write!(file, "{}", self.to_json())?;
+        Ok(())
     }
 }
 
 impl<Repr: DeserializeOwned + Represent> DataContainer<Repr> {
-    pub fn from_json(json: impl AsRef<str>) -> Option<Self> {
-        let data: Vec<Rc<RefCell<Repr>>> = serde_json::from_str(json.as_ref()).ok()?;
-        Some(Self {
+    pub fn from_json(json: impl AsRef<str>) -> serde_json::Result<Self> {
+        let data: Vec<Rc<RefCell<Repr>>> = serde_json::from_str(json.as_ref())?;
+        Ok(Self {
             container: data
                 .into_iter()
                 .map(|x| (make_ref(&x).identity(), Rc::clone(&x)))
                 .collect(),
         })
     }
-}
-pub fn restore<Repr>(path: impl AsRef<Path>) -> Option<DataContainer<Repr>>
-where
-    Repr: DeserializeOwned + Represent,
-{
-    let json = fs::read_to_string(path).ok()?;
-    DataContainer::from_json(&json)
+
+    pub fn restore(path: impl AsRef<Path>) -> io::Result<Self> {
+        let json = fs::read_to_string(path)?;
+        DataContainer::from_json(&json)
+            .map_err(|json_err| io::Error::new(io::ErrorKind::InvalidData, json_err))
+    }
 }

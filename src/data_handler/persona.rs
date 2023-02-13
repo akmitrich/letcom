@@ -92,5 +92,5 @@ pub fn import_persona(data: &str) -> Option<Persona> {
 
 pub fn restore_persona_container(path: impl AsRef<Path>) -> Option<PersonaContainer> {
     let json = fs::read_to_string(path).ok()?;
-    PersonaContainer::from_json(&json)
+    PersonaContainer::from_json(&json).ok()
 }
