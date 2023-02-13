@@ -4,9 +4,10 @@ use crate::{
     data_handler::{
         data_container::restore,
         letter::{new_letter, Letter},
+        make_ref,
         persona::{restore_persona_container, Persona, PersonaContainer},
         tag::TagContainer,
-        Represent,
+        Identity, Represent,
     },
     ui::Ui,
 };
@@ -48,6 +49,10 @@ impl Controller {
             self.ui.step_next();
         }
     }
+
+    fn get_people(&self) -> Vec<Persona> {
+        self.persona_container.all_representations().collect()
+    }
 }
 
 impl Controller {
@@ -66,6 +71,7 @@ impl Controller {
                 ImportPersona(p) => self.import_persona(p),
                 SelectPersona => self.select_persona(),
                 EditPersona(p) => self.edit_persona(p),
+                CompleteEditPersona { key, persona } => self.complete_edit_persona(key, persona),
                 RemovePersonaAlert(p) => self.remove_persona_alert(p),
                 RemovePersona(p) => self.remove_persona(p),
                 Quit => return self.finalize(),
@@ -80,11 +86,11 @@ impl Controller {
     }
 
     fn open_settings(&mut self) {
-        self.ui.settings_form(self.settings.clone());
+        self.ui.settings_form(self.settings.clone()); //clone smart pointer to settings
     }
 
     fn save_settings(&self) {
-        self.settings.borrow().save();
+        make_ref(&self.settings).save();
     }
 
     fn new_letter(&mut self) {
@@ -93,18 +99,19 @@ impl Controller {
     }
 
     fn open_letter_to_send(&mut self, letter: Letter) {
-        let addresses = vec!["ak.mitrich@mail.ru".to_owned()];
-        self.ui.send_letter_form(letter, addresses);
+        let people = self.get_people();
+        self.ui.send_letter_form(letter, people);
     }
 
     fn send_email(&mut self, letter: Letter, to: Vec<String>) {
+        let letter = make_ref(&letter);
         self.tx
             .send(ControllerSignal::Log(format!(
                 "To: {:?}\n{:?}\n{:?}\n{:?}",
                 to,
-                letter.borrow().get_topic(),
-                letter.borrow().get_text(),
-                "Attacments" // letter.borrow().attachment_info()
+                letter.get_topic(),
+                letter.get_text(),
+                letter.attachment_info()
             )))
             .unwrap();
     }
@@ -112,8 +119,7 @@ impl Controller {
     fn import_persona(&mut self, persona: Vec<Persona>) {
         let count = persona.len();
         for persona in persona {
-            let identity = persona.borrow().identity();
-            self.persona_container.update_identity(identity, persona);
+            self.persona_container.insert_or_update(persona);
         }
         self.tx
             .send(ControllerSignal::Log(format!(
@@ -129,7 +135,12 @@ impl Controller {
     }
 
     fn edit_persona(&mut self, persona: Persona) {
-        self.ui.edit_persona_form(persona);
+        let key = make_ref(&persona).identity();
+        self.ui.edit_persona_form(key, persona);
+    }
+
+    fn complete_edit_persona(&mut self, key: Identity, persona: Persona) {
+        self.persona_container.update_identity(key, persona);
     }
 
     fn remove_persona_alert(&mut self, persona: Persona) {
@@ -159,6 +170,7 @@ pub enum ControllerSignal {
     ImportPersona(Vec<Persona>),
     SelectPersona,
     EditPersona(Persona),
+    CompleteEditPersona { key: Identity, persona: Persona },
     RemovePersonaAlert(Persona),
     RemovePersona(Persona),
     Quit,

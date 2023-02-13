@@ -1,3 +1,5 @@
+use std::sync::mpsc::{self, Sender};
+
 use cursive::{
     event::{Event, EventResult, Key, MouseButton, MouseEvent},
     view::ViewWrapper,
@@ -6,13 +8,16 @@ use cursive::{
 };
 
 use crate::{
-    data_handler::{persona::Persona, Represent},
+    controller::ControllerSignal,
+    data_handler::{make_mut, make_ref, persona::Persona, Identity, Represent},
     ui::utils::{dismiss, form_view, get_area_from},
 };
 
 pub struct EditPersonaForm {
     view: Dialog,
+    key: Identity,
     persona: Persona,
+    controller_tx: mpsc::Sender<ControllerSignal>,
 }
 
 impl EditPersonaForm {
@@ -21,10 +26,12 @@ impl EditPersonaForm {
     const SURNAME_INDEX: usize = 2;
     const EMAIL_INDEX: usize = 3;
 
-    pub fn new(persona: Persona) -> Self {
+    pub fn new(key: Identity, persona: Persona, controller_tx: &Sender<ControllerSignal>) -> Self {
         Self {
             view: init_dialog(&persona),
+            key,
             persona,
+            controller_tx: controller_tx.clone(),
         }
     }
 
@@ -41,12 +48,18 @@ impl EditPersonaForm {
         let name = self.get_area(Self::NAME_INDEX).get_content().to_string();
         let surname = self.get_area(Self::SURNAME_INDEX).get_content().to_string();
         let email = self.get_area(Self::EMAIL_INDEX).get_content().to_string();
-        let mut persona = self.persona.borrow_mut();
+        let mut persona = make_mut(&self.persona);
         persona.set_family(family);
         persona.set_name(name);
         persona.set_surname(surname);
         persona.set_email(email);
         drop(persona);
+        self.controller_tx
+            .send(ControllerSignal::CompleteEditPersona {
+                key: self.key.clone(),
+                persona: self.persona.clone(),
+            })
+            .unwrap();
         dismiss()
     }
 
@@ -96,16 +109,13 @@ impl ViewWrapper for EditPersonaForm {
 
 fn init_dialog(persona: &Persona) -> Dialog {
     Dialog::around(init_view(persona))
-        .title(format!(
-            "Редактируем {}",
-            persona.as_ref().borrow().identity()
-        ))
+        .title(format!("Редактируем {}", make_ref(persona).identity()))
         .button("Ok", |_| {})
         .button("Cancel", |_| {})
 }
 
 fn init_view(persona: &Persona) -> impl View {
-    let persona = persona.as_ref().borrow();
+    let persona = make_ref(persona);
     form_view(vec![
         (" Фамилия:", persona.get_family()),
         ("     Имя:", persona.get_name()),

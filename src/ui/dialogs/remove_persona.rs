@@ -7,7 +7,7 @@ use cursive::{
 
 use crate::{
     controller::ControllerSignal,
-    data_handler::{persona::Persona, Represent},
+    data_handler::{make_ref, persona::Persona, Represent},
 };
 
 pub fn remove_persona_dialog(
@@ -15,11 +15,12 @@ pub fn remove_persona_dialog(
     controller_tx: &mpsc::Sender<ControllerSignal>,
 ) -> impl View {
     let tx = controller_tx.clone();
+    let persona_identity = make_ref(&persona).identity();
     Dialog::around(TextView::new(format!(
         "Вы уверены, что хотите удалить\n{:?}?",
-        persona.as_ref().borrow().identity()
+        persona_identity
     )))
-    .title(format!("Удаляем {}", persona.as_ref().borrow().identity()))
+    .title(format!("Удаляем {}", persona_identity))
     .button("Yes", move |c| {
         tx.send(ControllerSignal::RemovePersona(persona.clone()))
             .unwrap();

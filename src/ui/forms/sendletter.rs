@@ -2,7 +2,7 @@ use std::sync::mpsc;
 
 use cursive::{
     event::{Event, EventResult, Key, MouseButton, MouseEvent},
-    view::ViewWrapper,
+    view::{Scrollable, ViewWrapper},
     views::{
         Checkbox, Dialog, DialogFocus, LinearLayout, ListChild, ListView, Panel, ResizedView,
         ScrollView, TextArea,
@@ -12,12 +12,15 @@ use cursive::{
 
 use crate::{
     controller::ControllerSignal,
-    data_handler::letter::Letter,
-    ui::utils::{dismiss, form_view},
+    data_handler::{letter::Letter, make_mut, make_ref, persona::Persona, Represent},
+    ui::utils::dismiss,
 };
+
+use super::letter::letter_view;
 
 pub struct SendLetterForm {
     view: Dialog,
+    people: Vec<Persona>,
     letter: Letter,
     controller_tx: mpsc::Sender<ControllerSignal>,
 }
@@ -25,19 +28,20 @@ pub struct SendLetterForm {
 impl SendLetterForm {
     pub fn new(
         letter: Letter,
-        addresses: Vec<String>,
+        people: Vec<Persona>,
         controller_tx: &mpsc::Sender<ControllerSignal>,
     ) -> Self {
         let controller_tx = controller_tx.clone();
         Self {
-            view: init_dialog(&letter, &addresses),
+            view: init_dialog(&letter, &people),
+            people,
             letter,
             controller_tx,
         }
     }
 
-    fn button_event(&mut self, _n: usize) -> EventResult {
-        match _n {
+    fn button_event(&mut self, n: usize) -> EventResult {
+        match n {
             0 => self.do_send(),
             1 => self.event_cancel(),
             _ => EventResult::Ignored,
@@ -62,7 +66,7 @@ impl SendLetterForm {
     fn update_letter(&mut self) {
         let topic = self.get_letter_area(0).get_content();
         let text = self.get_letter_area(1).get_content();
-        let mut letter = self.letter.borrow_mut();
+        let mut letter = make_mut(&self.letter);
         letter.set_topic(topic);
         letter.set_text(text);
     }
@@ -70,11 +74,14 @@ impl SendLetterForm {
     fn get_chosen_addresses(&self) -> Vec<String> {
         let mut chosen = vec![];
         let list_view = self.get_list_view();
-        for list_entry in list_view.children() {
-            if let ListChild::Row(label, check) = list_entry {
+        for (index, list_entry) in list_view.children().iter().enumerate() {
+            if let ListChild::Row(_, check) = list_entry {
                 if let Some(check) = check.downcast_ref::<Checkbox>() {
                     if check.is_checked() {
-                        chosen.push(label.to_owned());
+                        let email_string = make_ref(self.people.get(index).unwrap())
+                            .get_email()
+                            .to_string();
+                        chosen.push(email_string);
                     }
                 }
             }
@@ -84,8 +91,9 @@ impl SendLetterForm {
 
     fn get_list_view(&self) -> &ListView {
         self.get_panel(0)
-            .downcast_ref::<Panel<ListView>>()
+            .downcast_ref::<Panel<ScrollView<ListView>>>()
             .unwrap()
+            .get_inner()
             .get_inner()
     }
 
@@ -151,32 +159,29 @@ impl ViewWrapper for SendLetterForm {
     }
 }
 
-fn init_dialog(letter: &Letter, addresses: &[String]) -> Dialog {
-    Dialog::around(init_view(letter, addresses))
+fn init_dialog(letter: &Letter, people: &[Persona]) -> Dialog {
+    Dialog::around(init_view(letter, people))
         .title("Отправка письма")
         .button("SEND", |_| {})
         .button("Cancel", |_| {})
 }
 
-fn init_view(letter: &Letter, addresses: &[String]) -> impl View {
+fn init_view(letter: &Letter, people: &[Persona]) -> impl View {
     LinearLayout::horizontal()
-        .child(Panel::new(init_address_panel(addresses)))
+        .child(Panel::new(init_address_panel(people)))
         .child(Panel::new(init_letter_panel(letter)))
 }
 
-fn init_address_panel(addresses: &[String]) -> impl View {
+fn init_address_panel(people: &[Persona]) -> impl View {
     let mut select = ListView::new();
-    for a in addresses {
+    for persona in people {
         let checkbox = Checkbox::new().unchecked();
-        select.add_child(a, checkbox);
+        let label = make_ref(persona).identity();
+        select.add_child(&label, checkbox);
     }
-    select
+    select.scrollable()
 }
 
 fn init_letter_panel(letter: &Letter) -> impl View {
-    let letter = letter.as_ref().borrow();
-    form_view(vec![
-        (" Тема:", letter.get_topic()),
-        ("Текст:", letter.get_text()),
-    ])
+    letter_view(letter)
 }

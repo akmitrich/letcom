@@ -2,8 +2,9 @@ use std::{cell::RefCell, io, path::Path, rc::Rc};
 
 use serde::{Deserialize, Serialize};
 
-use super::{attached_file::AttachedFile, Identity, Represent};
+use super::{attached_file::AttachedFile, data_container::DataContainer, Identity, Represent};
 
+pub type LetterContainer = DataContainer<LetterRepr>;
 pub type Letter = Rc<RefCell<LetterRepr>>;
 pub type DateTime = chrono::DateTime<chrono::Local>;
 
@@ -46,7 +47,8 @@ impl LetterRepr {
     }
 
     pub fn attachment_info(&self) -> String {
-        self.attachment
+        let info = self
+            .attachment
             .iter()
             .map(|attached_file| {
                 format!(
@@ -55,8 +57,12 @@ impl LetterRepr {
                     attached_file.get_size()
                 )
             })
-            .collect::<Vec<_>>()
-            .join(" ")
+            .collect::<Vec<_>>();
+        if info.is_empty() {
+            "[Вложений нет]".to_string()
+        } else {
+            info.join(" ")
+        }
     }
 
     pub fn add_attachment_from_path(&mut self, path: impl AsRef<Path>) -> io::Result<()> {

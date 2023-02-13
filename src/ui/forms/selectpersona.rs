@@ -9,7 +9,7 @@ use cursive::{
 
 use crate::{
     controller::ControllerSignal,
-    data_handler::{persona::Persona, Represent},
+    data_handler::{make_ref, persona::Persona, Represent},
     ui::utils::dismiss,
 };
 
@@ -128,12 +128,12 @@ fn init_dialog(persona: Vec<Persona>) -> Dialog {
         .button("Remove", |_| {})
 }
 
-fn init_view(persona: Vec<Persona>) -> impl View {
+fn init_view(persona_list: Vec<Persona>) -> impl View {
     let mut select = SelectView::new().popup();
     select.set_autojump(true);
-    for p in persona {
-        let label = p.borrow().identity();
-        select.add_item(label, p);
+    for persona in persona_list {
+        let label = make_ref(&persona).identity();
+        select.add_item(label, persona);
     }
     select
 }

@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use super::{data_container::DataContainer, Identity, Represent};
 
-pub type Persona = Rc<RefCell<PersonaRepr>>; //Arc<RwLock<PersonaRepr>>;
+pub type Persona = Rc<RefCell<PersonaRepr>>;
 pub type PersonaContainer = DataContainer<PersonaRepr>;
 
 #[derive(Debug, Serialize, Deserialize)]

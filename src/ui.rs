@@ -9,7 +9,7 @@ use cursive::{
 
 use crate::{
     controller::{settings::Settings, ControllerSignal},
-    data_handler::{letter::Letter, persona::Persona},
+    data_handler::{letter::Letter, persona::Persona, Identity},
 };
 
 pub struct Ui {
@@ -65,11 +65,11 @@ impl Ui {
         );
     }
 
-    pub(crate) fn send_letter_form(&mut self, letter: Letter, addresses: Vec<String>) {
+    pub(crate) fn send_letter_form(&mut self, letter: Letter, people: Vec<Persona>) {
         self.runner
             .add_layer(forms::sendletter::SendLetterForm::new(
                 letter,
-                addresses,
+                people,
                 &self.controller_tx,
             ));
     }
@@ -90,9 +90,13 @@ impl Ui {
         }
     }
 
-    pub(crate) fn edit_persona_form(&mut self, persona: Persona) {
+    pub(crate) fn edit_persona_form(&mut self, key: Identity, persona: Persona) {
         self.runner
-            .add_layer(forms::editpersona::EditPersonaForm::new(persona));
+            .add_layer(forms::editpersona::EditPersonaForm::new(
+                key,
+                persona,
+                &self.controller_tx,
+            ));
     }
 
     pub(crate) fn present_info(&mut self, info: impl AsRef<str>) {

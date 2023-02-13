@@ -2,7 +2,7 @@ use std::{cell::RefCell, collections::BTreeMap, fs, io::Write, path::Path, rc::R
 
 use serde::{de::DeserializeOwned, Serialize};
 
-use super::{Identity, Represent};
+use super::{make_ref, Identity, Represent};
 
 #[derive(Debug)]
 pub struct DataContainer<Repr> {
@@ -37,13 +37,13 @@ impl<Repr> Default for DataContainer<Repr> {
 
 impl<Repr: Represent> DataContainer<Repr> {
     pub fn insert_or_update(&mut self, repr: Rc<RefCell<Repr>>) {
-        let repr_id = repr.borrow().identity();
+        let repr_id = make_ref(&repr).identity();
         self.update_identity(repr_id, repr);
     }
 
     pub fn update_identity(&mut self, identity: impl AsRef<str>, repr: Rc<RefCell<Repr>>) {
         let key = identity.as_ref();
-        let repr_id = repr.borrow().identity();
+        let repr_id = make_ref(&repr).identity();
         if repr_id != key {
             self.container.remove(key);
         }
@@ -58,7 +58,7 @@ impl<Repr: Represent> DataContainer<Repr> {
     }
 
     pub fn remove_representation(&mut self, repr: Rc<RefCell<Repr>>) -> Option<Rc<RefCell<Repr>>> {
-        self.remove_identity(repr.borrow().identity())
+        self.remove_identity(make_ref(&repr).identity())
     }
 }
 
@@ -80,7 +80,7 @@ impl<Repr: DeserializeOwned + Represent> DataContainer<Repr> {
         Some(Self {
             container: data
                 .into_iter()
-                .map(|x| (x.borrow().identity(), Rc::clone(&x)))
+                .map(|x| (make_ref(&x).identity(), Rc::clone(&x)))
                 .collect(),
         })
     }

@@ -9,6 +9,7 @@ use cursive::{
 
 use crate::{
     controller::{settings::Settings, ControllerSignal},
+    data_handler::{make_mut, make_ref},
     ui::utils::{dismiss, form_view},
 };
 
@@ -62,28 +63,28 @@ impl SettingsForm {
     }
 
     fn update_smtp_relay(&mut self) {
-        self.settings.borrow_mut().smtp_relay = self.get_data(Self::SMTP_RELAY_I);
+        make_mut(&self.settings).smtp_relay = self.get_data(Self::SMTP_RELAY_I);
     }
 
     fn update_smtp_user(&mut self) {
-        self.settings.borrow_mut().smtp_user = self.get_data(Self::SMTP_USER_I);
+        make_mut(&self.settings).smtp_user = self.get_data(Self::SMTP_USER_I);
     }
 
     fn update_smtp_password(&mut self) {
-        self.settings.borrow_mut().smtp_password = self.get_data(Self::SMTP_PASSWORD_I);
+        make_mut(&self.settings).smtp_password = self.get_data(Self::SMTP_PASSWORD_I);
     }
     fn update_letter_from(&mut self) {
-        self.settings.borrow_mut().letter_from = self.get_data(Self::LETTER_FROM_I);
+        make_mut(&self.settings).letter_from = self.get_data(Self::LETTER_FROM_I);
     }
     fn update_plural_title(&mut self) {
-        self.settings.borrow_mut().plural_title = self.get_data(Self::PLURAL_TITLE_I);
+        make_mut(&self.settings).plural_title = self.get_data(Self::PLURAL_TITLE_I);
     }
     fn update_single_greet(&mut self) {
-        self.settings.borrow_mut().single_greet = self.get_data(Self::SINGLE_GREET_I);
+        make_mut(&self.settings).single_greet = self.get_data(Self::SINGLE_GREET_I);
     }
 
     fn update_signature(&mut self) {
-        self.settings.borrow_mut().letter_signature = self.get_data(Self::SIGNATURE_I);
+        make_mut(&self.settings).letter_signature = self.get_data(Self::SIGNATURE_I);
     }
 
     fn get_data(&self, index: usize) -> String {
@@ -156,7 +157,7 @@ fn init_dialog(settings: &Settings) -> Dialog {
 }
 
 fn init_form(settings: &Settings) -> impl View {
-    let settings = settings.as_ref().borrow();
+    let settings = make_ref(settings);
     form_view(vec![
         ("SMTP-сервер:", &settings.smtp_relay),
         ("SMTP-пользователь:", &settings.smtp_user),

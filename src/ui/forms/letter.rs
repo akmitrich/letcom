@@ -9,7 +9,7 @@ use cursive::{
 
 use crate::{
     controller::ControllerSignal,
-    data_handler::letter::Letter,
+    data_handler::{letter::Letter, make_mut, make_ref},
     ui::{
         dialogs::{open_file::OpenFileDialog, SetData},
         utils::{dismiss, get_area_from, linear_layout_form},
@@ -41,7 +41,7 @@ impl LetterForm {
 
     pub fn set_filename(&mut self, filename: &str) {
         let filename = filename.trim();
-        if let Err(e) = self.letter.borrow_mut().add_attachment_from_path(filename) {
+        if let Err(ref e) = make_mut(&self.letter).add_attachment_from_path(filename) {
             self.controller_tx
                 .send(ControllerSignal::Log(format!(
                     "Не удалось присоединить файл: {:?}\nОшибка: {}",
@@ -71,14 +71,14 @@ impl LetterForm {
     }
 
     fn update_attachments(&mut self) {
-        let info = self.letter.borrow().attachment_info();
+        let info = make_ref(&self.letter).attachment_info();
         self.get_attachment_view().set_content(info);
     }
 
     fn save_letter(&mut self) {
         let topic = self.get_area(0).get_content();
         let text = self.get_area(1).get_content();
-        let mut letter = self.letter.borrow_mut();
+        let mut letter = make_mut(&self.letter);
         letter.set_topic(topic);
         letter.set_text(text);
     }
@@ -170,11 +170,18 @@ fn init_dialog(letter: &Letter) -> Dialog {
 }
 
 fn init_form(letter: &Letter) -> impl View {
-    let letter = letter.as_ref().borrow();
+    letter_view(letter)
+}
+
+pub(crate) fn letter_view(letter: &Letter) -> impl View {
+    let letter = make_ref(letter);
     linear_layout_form(vec![
         ("Тема:", letter.get_topic()),
         ("Сообщение:", letter.get_text()),
     ])
-    .child(TextView::new(letter.attachment_info()))
+    .child(TextView::new(format!(
+        "Вложения: {}",
+        letter.attachment_info()
+    )))
     .scrollable()
 }
