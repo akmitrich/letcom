@@ -15,14 +15,14 @@ use crate::{
 
 pub struct SelectPersonaForm {
     view: Dialog,
-    ui_tx: mpsc::Sender<ControllerSignal>,
+    controller_tx: mpsc::Sender<ControllerSignal>,
 }
 
 impl SelectPersonaForm {
     pub fn new(persona: Vec<Persona>, ui_tx: &mpsc::Sender<ControllerSignal>) -> Self {
         Self {
             view: init_dialog(persona),
-            ui_tx: ui_tx.clone(),
+            controller_tx: ui_tx.clone(),
         }
     }
 
@@ -37,7 +37,7 @@ impl SelectPersonaForm {
 
     fn event_edit(&self) -> EventResult {
         if let Some(selected_persona) = self.get_selected_persona() {
-            self.ui_tx
+            self.controller_tx
                 .send(ControllerSignal::EditPersona(selected_persona))
                 .unwrap();
             dismiss()
@@ -49,7 +49,7 @@ impl SelectPersonaForm {
 
     fn event_remove(&self) -> EventResult {
         if let Some(selected_persona) = self.get_selected_persona() {
-            self.ui_tx
+            self.controller_tx
                 .send(ControllerSignal::RemovePersonaAlert(selected_persona))
                 .unwrap();
             dismiss()
@@ -64,7 +64,7 @@ impl SelectPersonaForm {
     }
 
     fn no_selection_info(&self, action: &str) {
-        self.ui_tx
+        self.controller_tx
             .send(ControllerSignal::Log(format!(
                 "Для {} надо выбрать персону.",
                 action

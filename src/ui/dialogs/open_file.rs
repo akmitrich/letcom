@@ -13,12 +13,12 @@ use super::SetData;
 
 pub struct OpenFileDialog<P> {
     view: Dialog,
-    parent_name: uuid::Uuid,
+    parent_name: String,
     ph: PhantomData<P>,
 }
 
 impl<P> OpenFileDialog<P> {
-    pub fn new(parent_name: uuid::Uuid) -> Self {
+    pub fn new(parent_name: String) -> Self {
         Self {
             view: init_dialog(),
             parent_name,
@@ -32,7 +32,7 @@ impl<P: SetData + ViewWrapper> OpenFileDialog<P> {
         match button {
             0 => {
                 let filename = self.get_filename();
-                let parent_name = self.parent_name;
+                let parent_name = self.parent_name.to_string();
                 EventResult::with_cb_once(move |c| {
                     let parent_name = parent_name.to_string();
                     if let Some(mut parent) = c.find_name::<P>(&parent_name) {

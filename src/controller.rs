@@ -60,6 +60,8 @@ impl Controller {
                 OpenSettings => self.open_settings(),
                 SaveSettings => self.save_settings(),
                 NewLetter => self.new_letter(),
+                EditLetter(letter) => self.edit_letter(letter),
+                CompleteEditLetter { key, letter } => self.complete_edit_letter(key, letter),
                 OpenLetterToSend(letter) => self.open_letter_to_send(letter),
                 SendEmail { letter, to } => self.send_email(letter, to),
                 ImportPersona(p) => self.import_persona(p),
@@ -89,7 +91,18 @@ impl Controller {
 
     fn new_letter(&mut self) {
         let letter = new_letter();
-        self.ui.letter_form(letter);
+        self.tx.send(ControllerSignal::EditLetter(letter)).unwrap();
+    }
+
+    fn edit_letter(&mut self, letter: Letter) {
+        let key = make_ref(&letter).identity();
+        self.ui.letter_form(key, letter);
+    }
+
+    fn complete_edit_letter(&mut self, key: Identity, letter: Letter) {
+        self.tx
+            .send(ControllerSignal::Log(format!("Complete window:\n{}", key)))
+            .unwrap()
     }
 
     fn open_letter_to_send(&mut self, letter: Letter) {
@@ -166,6 +179,8 @@ pub enum ControllerSignal {
     OpenSettings,
     SaveSettings,
     NewLetter,
+    EditLetter(Letter),
+    CompleteEditLetter { key: Identity, letter: Letter },
     OpenLetterToSend(Letter),
     SendEmail { letter: Letter, to: Vec<String> },
     ImportPersona(Vec<Persona>),

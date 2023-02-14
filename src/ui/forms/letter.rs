@@ -9,7 +9,7 @@ use cursive::{
 
 use crate::{
     controller::ControllerSignal,
-    data_handler::{letter::Letter, make_mut, make_ref},
+    data_handler::{letter::Letter, make_mut, make_ref, Identity},
     ui::{
         dialogs::{open_file::OpenFileDialog, SetData},
         utils::{dismiss, get_area_from, linear_layout_form},
@@ -18,20 +18,20 @@ use crate::{
 
 pub struct LetterForm {
     view: Dialog,
-    name: uuid::Uuid,
+    key: Identity,
     letter: Letter,
     controller_tx: mpsc::Sender<ControllerSignal>,
 }
 
 impl LetterForm {
     pub fn new(
-        name: uuid::Uuid,
+        key: Identity,
         letter: Letter,
         controller_tx: &mpsc::Sender<ControllerSignal>,
     ) -> Self {
         let mut form = Self {
             view: init_dialog(&letter),
-            name,
+            key,
             letter,
             controller_tx: controller_tx.clone(),
         };
@@ -84,7 +84,7 @@ impl LetterForm {
     }
 
     fn event_submit(&mut self) -> EventResult {
-        self.save_letter();
+        self.complete_helper();
         dismiss()
     }
 
@@ -93,18 +93,34 @@ impl LetterForm {
     }
 
     fn event_open_file(&mut self) -> EventResult {
-        let parent_name = self.name;
+        let parent_name = self.key.to_string();
         EventResult::with_cb_once(move |c| {
             c.add_layer(OpenFileDialog::<Self>::new(parent_name));
         })
     }
 
+    fn event_clear_attachment(&mut self) -> EventResult {
+        make_mut(&self.letter).clear_attachment();
+        self.update_attachments();
+        EventResult::consumed()
+    }
+
     fn event_send(&mut self) -> EventResult {
-        self.save_letter();
+        self.complete_helper();
         self.controller_tx
             .send(ControllerSignal::OpenLetterToSend(self.letter.clone()))
             .unwrap();
         dismiss()
+    }
+
+    fn complete_helper(&mut self) {
+        self.save_letter();
+        self.controller_tx
+            .send(ControllerSignal::CompleteEditLetter {
+                key: self.key.to_string(),
+                letter: self.letter.clone(),
+            })
+            .unwrap();
     }
 
     fn button_event(&mut self, button: usize) -> EventResult {
@@ -112,6 +128,7 @@ impl LetterForm {
             0 => self.event_submit(),
             1 => self.event_cancel(),
             2 => self.event_open_file(),
+            3 => self.event_clear_attachment(),
             4 => self.event_send(),
             _ => EventResult::Ignored,
         }
@@ -165,7 +182,7 @@ fn init_dialog(letter: &Letter) -> Dialog {
         .button("OK", |_| {})
         .button("Cancel", |_| {})
         .button("Add file", |_| {})
-        .button("Remove file", |_| {})
+        .button("Remove ALL files", |_| {})
         .button("Send", |_| {})
 }
 

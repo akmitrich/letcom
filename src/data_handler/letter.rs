@@ -70,6 +70,10 @@ impl LetterRepr {
         self.attachment.push(attached_file);
         Ok(())
     }
+
+    pub fn clear_attachment(&mut self) {
+        self.attachment.clear();
+    }
 }
 
 impl Represent for LetterRepr {

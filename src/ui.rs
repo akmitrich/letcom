@@ -57,12 +57,24 @@ impl Ui {
         ))
     }
 
-    pub(crate) fn letter_form(&mut self, letter: Letter) {
-        let letter_form_id = uuid::Uuid::new_v4();
-        self.runner.add_layer(
-            forms::letter::LetterForm::new(letter_form_id, letter, &self.controller_tx)
-                .with_name(letter_form_id.to_string()),
-        );
+    pub(crate) fn letter_form(&mut self, key: Identity, letter: Letter) {
+        let form_name = key.to_string();
+        if let Some(_form) = self
+            .runner
+            .find_name::<forms::letter::LetterForm>(&form_name)
+        {
+            self.controller_tx
+                .send(ControllerSignal::Log(format!(
+                    "Окно {} уже есть",
+                    form_name
+                )))
+                .unwrap()
+        } else {
+            self.runner.add_layer(
+                forms::letter::LetterForm::new(key, letter, &self.controller_tx)
+                    .with_name(form_name),
+            );
+        }
     }
 
     pub(crate) fn send_letter_form(&mut self, letter: Letter, people: Vec<Persona>) {
