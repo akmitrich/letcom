@@ -1,3 +1,4 @@
+pub use signals::ControllerSignal;
 use std::sync::mpsc;
 
 use crate::{
@@ -6,6 +7,7 @@ use crate::{
         letter::{new_letter, Letter},
         make_ref,
         persona::Persona,
+        tag::{new_tag, Tag},
         Identity, Represent,
     },
     ui::Ui,
@@ -59,6 +61,8 @@ impl Controller {
                 Log(info) => self.log(info),
                 OpenSettings => self.open_settings(),
                 SaveSettings => self.save_settings(),
+                NewTag => self.new_tag(),
+                CompleteEditTag { key, tag } => self.complete_edit_tag(key, tag),
                 NewLetter => self.new_letter(),
                 EditLetter(letter) => self.edit_letter(letter),
                 CompleteEditLetter { key, letter } => self.complete_edit_letter(key, letter),
@@ -89,6 +93,22 @@ impl Controller {
         make_ref(&self.settings).save();
     }
 
+    fn new_tag(&mut self) {
+        let new_tag = new_tag("New");
+        let people = self
+            .data_handler
+            .get_people()
+            .idendities()
+            .cloned()
+            .collect::<Vec<_>>();
+        self.ui
+            .tag_form(make_ref(&new_tag).identity(), new_tag.clone(), &people);
+    }
+
+    fn complete_edit_tag(&mut self, key: Identity, tag: Tag) {
+        self.data_handler.get_tags_mut().update_identity(key, tag);
+    }
+
     fn new_letter(&mut self) {
         let letter = new_letter();
         self.tx.send(ControllerSignal::EditLetter(letter)).unwrap();
@@ -99,7 +119,7 @@ impl Controller {
         self.ui.letter_form(key, letter);
     }
 
-    fn complete_edit_letter(&mut self, key: Identity, letter: Letter) {
+    fn complete_edit_letter(&mut self, key: Identity, _letter: Letter) {
         self.tx
             .send(ControllerSignal::Log(format!("Complete window:\n{}", key)))
             .unwrap()
@@ -172,24 +192,5 @@ impl Controller {
     }
 }
 
-#[derive(Debug)]
-pub enum ControllerSignal {
-    Noop,
-    Log(String),
-    OpenSettings,
-    SaveSettings,
-    NewLetter,
-    EditLetter(Letter),
-    CompleteEditLetter { key: Identity, letter: Letter },
-    OpenLetterToSend(Letter),
-    SendEmail { letter: Letter, to: Vec<String> },
-    ImportPersona(Vec<Persona>),
-    SelectPersona,
-    EditPersona(Persona),
-    CompleteEditPersona { key: Identity, persona: Persona },
-    RemovePersonaAlert(Persona),
-    RemovePersona(Persona),
-    Quit,
-}
-
 pub mod settings;
+pub mod signals;

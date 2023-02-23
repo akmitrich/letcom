@@ -9,7 +9,7 @@ use cursive::{
 
 use crate::{
     controller::{settings::Settings, ControllerSignal},
-    data_handler::{letter::Letter, persona::Persona, Identity},
+    data_handler::{letter::Letter, persona::Persona, tag::Tag, Identity},
 };
 
 pub struct Ui {
@@ -53,6 +53,15 @@ impl Ui {
     pub(crate) fn settings_form(&mut self, settings: Settings) {
         self.runner.add_layer(forms::settings::SettingsForm::new(
             settings,
+            &self.controller_tx,
+        ))
+    }
+
+    pub(crate) fn tag_form(&mut self, key: Identity, tag: Tag, persona_list: &[Identity]) {
+        self.runner.add_layer(forms::tag::TagForm::new(
+            key,
+            tag,
+            persona_list,
             &self.controller_tx,
         ))
     }
@@ -120,6 +129,7 @@ fn init_menu(siv: &mut Cursive, controller_tx: &mpsc::Sender<ControllerSignal>) 
     let menu = siv.menubar();
     menu.add_subtree("Persona", menus::persona::persona_menu(controller_tx));
     menu.add_subtree("Email", menus::email::email_menu(controller_tx));
+    menu.add_subtree("Tags", menus::tag::tag_menu(controller_tx));
     let tx = controller_tx.clone();
     menu.add_leaf("Quit", move |_| tx.send(ControllerSignal::Quit).unwrap());
     siv.add_global_callback(Key::Esc, |c| c.select_menubar());

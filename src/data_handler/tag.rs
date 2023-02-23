@@ -19,6 +19,22 @@ impl TagRepr {
             persona_ids: Vec::new(),
         }
     }
+
+    pub fn label(&self) -> String {
+        self.label.to_string()
+    }
+
+    pub fn set_label(&mut self, label: impl ToString) {
+        self.label = label.to_string();
+    }
+
+    pub fn persona_ids(&self) -> impl Iterator<Item = &Identity> + '_ {
+        self.persona_ids.iter()
+    }
+
+    pub fn set_persona_ids(&mut self, ids: Vec<Identity>) {
+        self.persona_ids = ids;
+    }
 }
 
 impl Represent for TagRepr {
