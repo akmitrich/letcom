@@ -1,13 +1,17 @@
 use crate::data_handler::{letter::Letter, persona::Persona, tag::Tag, Identity};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ControllerSignal {
     Noop,
     Log(String),
     OpenSettings,
     SaveSettings,
     NewTag,
+    SelectTag,
+    EditTag(Tag),
     CompleteEditTag { key: Identity, tag: Tag },
+    RemoveTagAlert(Tag),
+    RemoveTag(Tag),
     NewLetter,
     EditLetter(Letter),
     CompleteEditLetter { key: Identity, letter: Letter },

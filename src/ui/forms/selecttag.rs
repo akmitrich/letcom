@@ -1,4 +1,4 @@
-use std::sync::mpsc;
+use std::sync::mpsc::{self, Sender};
 
 use cursive::{
     event::{Event, EventResult, Key, MouseButton, MouseEvent},
@@ -9,73 +9,77 @@ use cursive::{
 
 use crate::{
     controller::ControllerSignal,
-    data_handler::{make_ref, persona::Persona, Represent},
+    data_handler::{make_ref, tag::Tag},
     ui::utils::{dismiss, get_view_from_dialog, no_selection_info},
 };
 
-pub struct SelectPersonaForm {
+pub struct SelectTagForm {
     view: Dialog,
-    controller_tx: mpsc::Sender<ControllerSignal>,
+    controller_tx: Sender<ControllerSignal>,
 }
 
-impl SelectPersonaForm {
-    pub fn new(persona: Vec<Persona>, ui_tx: &mpsc::Sender<ControllerSignal>) -> Self {
+impl SelectTagForm {
+    pub fn new(tags: Vec<Tag>, controller_tx: &mpsc::Sender<ControllerSignal>) -> Self {
         Self {
-            view: init_dialog(persona),
-            controller_tx: ui_tx.clone(),
+            view: init_view(tags),
+            controller_tx: controller_tx.clone(),
         }
     }
+}
 
-    fn button_event(&self, n: usize) -> EventResult {
-        match n {
+impl SelectTagForm {
+    fn button_event(&mut self, index: usize) -> EventResult {
+        match index {
             0 => dismiss(),
             1 => self.event_edit(),
             2 => self.event_remove(),
-            _ => EventResult::Ignored,
+            _ => EventResult::consumed(),
         }
     }
 
-    fn event_edit(&self) -> EventResult {
-        if let Some(selected_persona) = self.get_selected_persona() {
+    fn event_edit(&mut self) -> EventResult {
+        if let Some(selected) = self.get_selected_tag() {
             self.controller_tx
-                .send(ControllerSignal::EditPersona(selected_persona))
+                .send(ControllerSignal::EditTag(selected))
                 .unwrap();
             dismiss()
         } else {
-            no_selection_info(&self.controller_tx, "редактирования", "персону");
+            no_selection_info(&self.controller_tx, "редактирования", "метку");
             EventResult::consumed()
         }
     }
 
-    fn event_remove(&self) -> EventResult {
-        if let Some(selected_persona) = self.get_selected_persona() {
+    fn event_remove(&mut self) -> EventResult {
+        if let Some(selected) = self.get_selected_tag() {
             self.controller_tx
-                .send(ControllerSignal::RemovePersonaAlert(selected_persona))
+                .send(ControllerSignal::RemoveTagAlert(selected))
                 .unwrap();
             dismiss()
         } else {
-            no_selection_info(&self.controller_tx, "удаления", "персону");
+            no_selection_info(&self.controller_tx, "удаления", "метку");
             EventResult::consumed()
         }
     }
 
-    fn event_close(&self) -> EventResult {
+    fn event_cancel(&mut self) -> EventResult {
         dismiss()
     }
+}
 
-    fn get_selected_persona(&self) -> Option<Persona> {
+impl SelectTagForm {
+    fn get_selected_tag(&self) -> Option<Tag> {
         self.get_select_view()
             .selection()
-            .map(|p| p.as_ref().clone())
+            .map(|t| t.as_ref().clone())
     }
 
-    fn get_select_view(&self) -> &SelectView<Persona> {
+    fn get_select_view(&self) -> &SelectView<Tag> {
         const SELECT_VIEW_INDEX: usize = 1;
         get_view_from_dialog(&self.view, SELECT_VIEW_INDEX)
     }
 }
 
-impl ViewWrapper for SelectPersonaForm {
+impl ViewWrapper for SelectTagForm {
     wrap_impl!(self.view: Dialog);
 
     fn wrap_on_event(&mut self, event: Event) -> EventResult {
@@ -102,7 +106,7 @@ impl ViewWrapper for SelectPersonaForm {
                     .with_view_mut(|v| v.on_event(event))
                     .unwrap_or(EventResult::Ignored),
             },
-            Event::Key(Key::Esc) => self.event_close(),
+            Event::Key(Key::Esc) => self.event_cancel(),
             _ => self
                 .with_view_mut(|v| v.on_event(event))
                 .unwrap_or(EventResult::Ignored),
@@ -110,21 +114,20 @@ impl ViewWrapper for SelectPersonaForm {
     }
 }
 
-fn init_dialog(persona: Vec<Persona>) -> Dialog {
-    Dialog::around(init_view(persona))
+fn init_view(tags: Vec<Tag>) -> Dialog {
+    Dialog::around(init_dialog(tags))
         .button("Close", |_| {})
         .button("Edit", |_| {})
         .button("Remove", |_| {})
 }
 
-fn init_view(persona_list: Vec<Persona>) -> impl View {
-    let mut select = SelectView::new().popup();
-    select.set_autojump(true);
-    for persona in persona_list {
-        let label = make_ref(&persona).identity();
-        select.add_item(label, persona);
+fn init_dialog(tags: Vec<Tag>) -> impl View {
+    let mut select = SelectView::<Tag>::new().popup();
+    for tag in tags {
+        let label = make_ref(&tag).label();
+        select.add_item(label, tag);
     }
     LinearLayout::vertical()
-        .child(TextView::new("Выберите персону:"))
+        .child(TextView::new("Выберите метку:"))
         .child(select)
 }

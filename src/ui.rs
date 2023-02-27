@@ -39,14 +39,6 @@ impl Ui {
             self.controller_tx.send(ControllerSignal::Quit).unwrap();
         }
     }
-
-    pub fn remove_persona_dialog(&mut self, persona: Persona) {
-        self.runner
-            .add_layer(dialogs::remove_persona::remove_persona_dialog(
-                persona,
-                &self.controller_tx,
-            ));
-    }
 }
 
 impl Ui {
@@ -57,6 +49,13 @@ impl Ui {
         ))
     }
 
+    pub(crate) fn select_tag_form(&mut self, tags: Vec<Tag>) {
+        self.runner.add_layer(forms::selecttag::SelectTagForm::new(
+            tags,
+            &self.controller_tx,
+        ));
+    }
+
     pub(crate) fn tag_form(&mut self, key: Identity, tag: Tag, persona_list: &[Identity]) {
         self.runner.add_layer(forms::tag::TagForm::new(
             key,
@@ -64,6 +63,11 @@ impl Ui {
             persona_list,
             &self.controller_tx,
         ))
+    }
+
+    pub(crate) fn remove_tag_dialog(&mut self, tag: Tag) {
+        self.runner
+            .add_layer(dialogs::remove_alerts::remove_tag_alert(tag));
     }
 
     pub(crate) fn letter_form(&mut self, key: Identity, letter: Letter) {
@@ -115,6 +119,14 @@ impl Ui {
         self.runner
             .add_layer(forms::editpersona::EditPersonaForm::new(
                 key,
+                persona,
+                &self.controller_tx,
+            ));
+    }
+
+    pub(crate) fn remove_persona_dialog(&mut self, persona: Persona) {
+        self.runner
+            .add_layer(dialogs::remove_alerts::remove_persona_alert(
                 persona,
                 &self.controller_tx,
             ));

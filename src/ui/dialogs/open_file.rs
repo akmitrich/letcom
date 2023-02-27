@@ -7,7 +7,7 @@ use cursive::{
     wrap_impl, View,
 };
 
-use crate::ui::utils::{dismiss, form_view, get_area_from};
+use crate::ui::utils::{dismiss, form_view, get_area_from_form};
 
 use super::SetData;
 
@@ -51,7 +51,7 @@ impl<P: SetData + ViewWrapper> OpenFileDialog<P> {
 
 impl<P> OpenFileDialog<P> {
     fn get_filename(&self) -> String {
-        get_area_from(&self.view, 0).get_content().to_string()
+        get_area_from_form(&self.view, 0).get_content().to_string()
     }
 }
 

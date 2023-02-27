@@ -3,7 +3,7 @@ use std::sync::mpsc;
 use cursive::{
     event::{Event, EventResult, Key, MouseButton, MouseEvent},
     view::{Scrollable, ViewWrapper},
-    views::{Dialog, DialogFocus, LinearLayout, ScrollView, TextArea, TextView},
+    views::{Dialog, DialogFocus, LinearLayout, ScrollView, TextView},
     wrap_impl, View,
 };
 
@@ -12,7 +12,7 @@ use crate::{
     data_handler::{letter::Letter, make_mut, make_ref, Identity},
     ui::{
         dialogs::{open_file::OpenFileDialog, SetData},
-        utils::{dismiss, get_area_from, linear_layout_form},
+        utils::{dismiss, get_text_from_form_entry, linear_layout_form},
     },
 };
 
@@ -54,11 +54,7 @@ impl LetterForm {
 }
 
 impl LetterForm {
-    fn get_area(&self, n: usize) -> &TextArea {
-        get_area_from(&self.view, n)
-    }
-
-    fn get_attachment_view(&mut self) -> &mut TextView {
+    fn get_attachment_view_mut(&mut self) -> &mut TextView {
         self.view
             .get_content_mut()
             .downcast_mut::<ScrollView<LinearLayout>>()
@@ -72,12 +68,14 @@ impl LetterForm {
 
     fn update_attachments(&mut self) {
         let info = make_ref(&self.letter).attachment_info();
-        self.get_attachment_view().set_content(info);
+        self.get_attachment_view_mut().set_content(info);
     }
 
     fn save_letter(&mut self) {
-        let topic = self.get_area(0).get_content();
-        let text = self.get_area(1).get_content();
+        const TOPIC_INDEX: usize = 0;
+        const TEXT_INDEX: usize = 1;
+        let topic = get_text_from_form_entry(&self.view, TOPIC_INDEX);
+        let text = get_text_from_form_entry(&self.view, TEXT_INDEX);
         let mut letter = make_mut(&self.letter);
         letter.set_topic(topic);
         letter.set_text(text);

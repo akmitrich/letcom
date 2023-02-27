@@ -3,14 +3,14 @@ use std::sync::mpsc::{self, Sender};
 use cursive::{
     event::{Event, EventResult, Key, MouseButton, MouseEvent},
     view::ViewWrapper,
-    views::{Dialog, DialogFocus, TextArea},
+    views::{Dialog, DialogFocus},
     wrap_impl, View,
 };
 
 use crate::{
     controller::ControllerSignal,
     data_handler::{make_mut, make_ref, persona::Persona, Identity, Represent},
-    ui::utils::{dismiss, form_view, get_area_from},
+    ui::utils::{dismiss, form_view, get_text_from_form_entry},
 };
 
 pub struct EditPersonaForm {
@@ -44,10 +44,10 @@ impl EditPersonaForm {
     }
 
     fn event_ok(&self) -> EventResult {
-        let family = self.get_area(Self::FAMILY_INDEX).get_content().to_string();
-        let name = self.get_area(Self::NAME_INDEX).get_content().to_string();
-        let surname = self.get_area(Self::SURNAME_INDEX).get_content().to_string();
-        let email = self.get_area(Self::EMAIL_INDEX).get_content().to_string();
+        let family = get_text_from_form_entry(&self.view, Self::FAMILY_INDEX);
+        let name = get_text_from_form_entry(&self.view, Self::NAME_INDEX);
+        let surname = get_text_from_form_entry(&self.view, Self::SURNAME_INDEX);
+        let email = get_text_from_form_entry(&self.view, Self::EMAIL_INDEX);
         let mut persona = make_mut(&self.persona);
         persona.set_family(family);
         persona.set_name(name);
@@ -65,10 +65,6 @@ impl EditPersonaForm {
 
     fn event_cancel(&self) -> EventResult {
         dismiss()
-    }
-
-    fn get_area(&self, entry_index: usize) -> &TextArea {
-        get_area_from(&self.view, entry_index)
     }
 }
 

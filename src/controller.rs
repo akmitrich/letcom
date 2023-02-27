@@ -62,7 +62,10 @@ impl Controller {
                 OpenSettings => self.open_settings(),
                 SaveSettings => self.save_settings(),
                 NewTag => self.new_tag(),
+                EditTag(tag) => self.edit_tag(tag),
+                SelectTag => self.select_tag(),
                 CompleteEditTag { key, tag } => self.complete_edit_tag(key, tag),
+                RemoveTagAlert(tag) => self.remove_tag_alert(tag),
                 NewLetter => self.new_letter(),
                 EditLetter(letter) => self.edit_letter(letter),
                 CompleteEditLetter { key, letter } => self.complete_edit_letter(key, letter),
@@ -95,6 +98,10 @@ impl Controller {
 
     fn new_tag(&mut self) {
         let new_tag = new_tag("New");
+        self.tx.send(ControllerSignal::EditTag(new_tag)).unwrap();
+    }
+
+    fn edit_tag(&mut self, tag: Tag) {
         let people = self
             .data_handler
             .get_people()
@@ -102,11 +109,20 @@ impl Controller {
             .cloned()
             .collect::<Vec<_>>();
         self.ui
-            .tag_form(make_ref(&new_tag).identity(), new_tag.clone(), &people);
+            .tag_form(make_ref(&tag).identity(), tag.clone(), &people);
+    }
+
+    fn select_tag(&mut self) {
+        self.ui
+            .select_tag_form(self.data_handler.get_tags().all_representations().collect());
     }
 
     fn complete_edit_tag(&mut self, key: Identity, tag: Tag) {
         self.data_handler.get_tags_mut().update_identity(key, tag);
+    }
+
+    fn remove_tag_alert(&mut self, tag: Tag) {
+        self.ui.remove_tag_dialog(tag);
     }
 
     fn new_letter(&mut self) {

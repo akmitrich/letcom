@@ -10,5 +10,9 @@ pub fn tag_menu(controller_tx: &mpsc::Sender<ControllerSignal>) -> Tree {
     tree.add_leaf("New tag", move |_| {
         new_tx.send(ControllerSignal::NewTag).unwrap();
     });
+    let select_tx = controller_tx.clone();
+    tree.add_leaf("Select tag...", move |_| {
+        select_tx.send(ControllerSignal::SelectTag).unwrap();
+    });
     tree
 }
