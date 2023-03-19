@@ -21,6 +21,7 @@ pub struct Controller {
     data_handler: DataHandler,
     rx: mpsc::Receiver<ControllerSignal>,
     tx: mpsc::Sender<ControllerSignal>,
+    stop: bool,
 }
 
 impl Controller {
@@ -34,12 +35,17 @@ impl Controller {
             data_handler: DataHandler::new(),
             rx,
             tx,
+            stop: false,
         }
     }
 
     pub fn run(&mut self) {
-        while self.process_signals() {
+        loop {
+            self.process_signals();
             self.ui.step_next();
+            if self.stop {
+                break;
+            }
         }
     }
 
@@ -52,7 +58,7 @@ impl Controller {
 }
 
 impl Controller {
-    fn process_signals(&mut self) -> bool {
+    fn process_signals(&mut self) {
         use ControllerSignal::*;
         if let Ok(signal) = self.rx.try_recv() {
             #[allow(unreachable_patterns)]
@@ -77,11 +83,13 @@ impl Controller {
                 CompleteEditPersona { key, persona } => self.complete_edit_persona(key, persona),
                 RemovePersonaAlert(p) => self.remove_persona_alert(p),
                 RemovePersona(p) => self.remove_persona(p),
-                Quit => return self.finalize(),
+                Quit => {
+                    self.finalize();
+                    self.stop = true;
+                }
                 any => eprintln!("Unexpected controller signal: {:?}", any),
             }
         }
-        true
     }
 
     fn log(&mut self, info: impl AsRef<str>) {
@@ -202,9 +210,8 @@ impl Controller {
             .remove_representation(persona);
     }
 
-    fn finalize(&mut self) -> bool {
+    fn finalize(&mut self) {
         self.data_handler.finalize();
-        false
     }
 }
 
